@@ -1,4 +1,4 @@
-module MinhaCarteira.Models.ParserOperacao
+module MinhaCarteira.ParserOperacao
 
 open System.IO
 open System
