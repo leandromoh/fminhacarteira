@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "minhacarteira", "minhacarteira\minhacarteira.fsproj", "{EE0A9A3B-0318-4C7D-8602-9643B0D1CC59}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "minhacarteira", "minhacarteira.fsproj", "{EE0A9A3B-0318-4C7D-8602-9643B0D1CC59}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

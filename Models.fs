@@ -48,3 +48,7 @@ type Posicao =
 
     member x.FinanceiroCompra = x.PrecoMedio * decimal x.Quantidade
     override x.ToString() = $"{x.Quantidade} {x.Ativo} {x.PrecoMedio}"
+
+type OperationError = 
+    | InvalidCSV of string * Exception
+    | InvalidOperation of Operacao  * string

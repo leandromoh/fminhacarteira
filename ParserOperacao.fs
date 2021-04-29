@@ -18,16 +18,16 @@ let parseLine culture (line: string) =
           }
           Ok operation
         with ex -> 
-          Error ex
+          (line, ex) |> InvalidCSV |> Error
     Result.bind  
       (fun operation -> 
           if operation.QuantidadeCompra > 0 && operation.QuantidadeVenda > 0 then
-              Error <| Exception "não pode comprar e vender na mesma operação"
+              (operation, "não pode comprar e vender na mesma operação") |> InvalidOperation |> Error
           else
               Ok operation) 
       result
 
-let private split results = 
+let split results = 
     let bons, erros = ResizeArray<_>(), ResizeArray<_>()  
     for item in results do
       match item with
@@ -35,12 +35,11 @@ let private split results =
       | Error x -> erros.Add x
     bons :> seq<_>, erros :> seq<_> 
 
-let parseCSV filePath culture =
+let parseCSV culture filePath =
     let lines = File.ReadAllLines(filePath)
     let ops = 
       lines
-         |> Array.skip 1
+         |> Array.skip 1 // header
          |> Array.where (String.IsNullOrWhiteSpace >> not)
          |> Array.map (parseLine culture)
-         |> split
     ops
