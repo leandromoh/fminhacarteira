@@ -29,7 +29,7 @@ let parsedCSV =
             let pattern = Path.GetFileName(path)
             let files = Directory.GetFiles(dir, pattern)
             files)
-       |> Seq.collect (ParserOperacao.parseCSV culture)
+       |> Seq.collect (File.ReadAllLines >> ParserOperacao.parseCSV culture)
 
 let ops, errors = ParserOperacao.split parsedCSV
 

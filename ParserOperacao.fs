@@ -35,8 +35,7 @@ let split results =
       | Error x -> erros.Add x
     bons :> seq<_>, erros :> seq<_> 
 
-let parseCSV culture filePath =
-    let lines = File.ReadAllLines(filePath)
+let parseCSV culture lines =
     let ops = 
       lines
          |> Array.skip 1 // header

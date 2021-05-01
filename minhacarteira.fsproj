@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Models.fs" />
+    <Compile Include="Cache.fs" />
     <Compile Include="ParserOperacao.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
