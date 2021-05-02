@@ -1,6 +1,5 @@
 ﻿// Learn more about F# at http://fsharp.org
 
-open System
 open System.Globalization
 open System.IO
 open Microsoft.Extensions.Configuration
@@ -22,7 +21,7 @@ let operationsFilesPath =
         .GetChildren()
         |> Seq.map (fun x -> x.Value)
 
-let parsedCSV = 
+let ops, errors = 
     operationsFilesPath
        |> Seq.collect (fun path -> 
             let dir = Path.GetDirectoryName(path)
@@ -30,12 +29,13 @@ let parsedCSV =
             let files = Directory.GetFiles(dir, pattern)
             files)
        |> Seq.collect (File.ReadAllLines >> ParserOperacao.parseCSV culture)
-
-let ops, errors = ParserOperacao.split parsedCSV
+       |> ParserOperacao.split
 
 [<EntryPoint>]
 let main argv =
-    printfn "Hello World from F#!"
-    printfn "%A" errors
-    printfn "%A" ops
-    0 // return an integer exit code
+    let map = 
+        ops
+            |> Seq.map (fun x -> x.Ativo)
+            |> Crawler.getCotacao
+            |> Async.RunSynchronously
+    0
