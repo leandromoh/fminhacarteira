@@ -26,3 +26,4 @@ let posicaoAtivos (operacoes: Operacao seq) : Posicao list =
         |> fun x -> { Ativo = ativo; Quantidade = x.qtd; PrecoMedio = x.pMedio })
     |> Seq.filter (fun x -> x.Quantidade <> 0)
     |> List.ofSeq
+    
