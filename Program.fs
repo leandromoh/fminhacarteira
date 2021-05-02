@@ -38,4 +38,6 @@ let main argv =
             |> Seq.map (fun x -> x.Ativo)
             |> Crawler.getCotacao
             |> Async.RunSynchronously
+
+    let pos = ops |> CalculoPosicao.posicaoAtivos
     0
