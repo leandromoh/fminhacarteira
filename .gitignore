@@ -46,3 +46,4 @@ docs/
 .vscode/
 *.lock.json
 tools/
+.local-chromium/
