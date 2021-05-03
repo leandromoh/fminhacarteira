@@ -29,6 +29,8 @@ type Carteira =
       TotalPatrimonio: decimal
       Ativos: seq<CarteiraAtivo> }
 
+    member x.TotalLucro = x.TotalPatrimonio - x.TotalAplicado
+
 type Operacao =
     { DtNegociacao: DateTime
       Conta: int
