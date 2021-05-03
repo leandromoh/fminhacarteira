@@ -10,6 +10,7 @@
     <Compile Include="Cache.fs" />
     <Compile Include="CalculoPosicao.fs" />
     <Compile Include="ParserOperacao.fs" />
+    <Compile Include="WriterHTML.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup />
