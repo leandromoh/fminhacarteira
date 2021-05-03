@@ -47,7 +47,7 @@ let getETFs() =
 let getCotacao ativos = async {  
     use! browser = getBrowser()
     use! page = browser.NewPageAsync() |> Async.AwaitTask  
-    return 
+    let! moneys = 
         ativos
         |> Seq.map(fun ativo -> async {  
             let! _ = page.GoToAsync($"http://www.google.com/search?q=%s{ativo}") |> Async.AwaitTask
@@ -58,7 +58,8 @@ let getCotacao ativos = async {
                     |> Async.AwaitTask
         }) 
         |> Async.Sequential
-        |> Async.RunSynchronously
+
+    return moneys
         |> Array.map ((fun s -> s.Replace(".", ",")) >> Decimal.TryParse >> 
             function 
             | true, d -> Some d
