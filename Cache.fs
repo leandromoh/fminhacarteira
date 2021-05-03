@@ -5,19 +5,20 @@ open System.Text.Json
 open System.Reflection
 open MinhaCarteira.Models
 
-let getOrCreate fallback tipoAtivo =
+let getOrCreate tipoAtivo fallback = async {
     let dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
     let path = Path.Combine(dir, $"{tipoAtivo}.json")
-    let ativos =
+    let! ativos = async {
         if File.Exists(path) then
             use streamFile = new StreamReader(path)
-            let content = streamFile.ReadToEnd()
-            JsonSerializer.Deserialize(content)
+            let! content = streamFile.ReadToEndAsync() |> Async.AwaitTask  
+            return JsonSerializer.Deserialize(content)
         else
-            let result = fallback()
-            let content = JsonSerializer.Serialize(result)
-            File.WriteAllText(path, content)
-            result
-    ativos
-      |> Array.map(fun x -> x, { Ticker = x; Tipo = tipoAtivo })
-      |> Map.ofArray
+            let! result = fallback()
+            let content = JsonSerializer.Serialize(result) 
+            let! _ = File.WriteAllTextAsync(path, content) |> Async.AwaitTask  
+            return result
+    }
+    return ativos
+           |> Array.map(fun x -> { Ticker = x; Tipo = tipoAtivo })
+}
