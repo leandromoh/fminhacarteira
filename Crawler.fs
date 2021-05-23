@@ -1,6 +1,7 @@
 module MinhaCarteira.Crawler
 
 open System
+open System.Threading.Tasks
 open PuppeteerSharp
 
 let private getBrowser() = async {
@@ -52,15 +53,23 @@ let getCotacao ativos = async {
         |> Seq.map(fun ativo -> async {  
             let! _ = page.GoToAsync($"http://www.google.com/search?q=%s{ativo}") |> Async.AwaitTask
             let cellSelector = "div[eid] div[data-ved] span[jscontroller] span[jsname]"   
-            return! page
-                    .QuerySelectorAsync(cellSelector)
-                    .EvaluateFunctionAsync<string>("_ => _.innerText")
-                    |> Async.AwaitTask
+            let! price = async {
+                try
+                    return!
+                         page
+                         .QuerySelectorAsync(cellSelector)
+                         .EvaluateFunctionAsync<string>("_ => _.innerText")
+                         |> Async.AwaitTask
+                with 
+                | _ -> return! Task.FromResult ("not found") |> Async.AwaitTask
+            }
+
+            return price
         }) 
         |> Async.Sequential
 
     return moneys
-        |> Array.map ((fun s -> s.Replace(".", ",")) >> Decimal.TryParse >> 
+        |> Array.map ((fun s -> s.Replace(",", ".")) >> Decimal.TryParse >> 
             function 
             | true, d -> Some d
             | _ -> None)
