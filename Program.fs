@@ -55,9 +55,10 @@ let asyncMain() = async {
     let! carteirasAll = 
         gruposAtivo
         |> Seq.map(fun (key, group) -> async {
-            let tickers = group |> Seq.map (fun x -> x.Ativo)
+            let posicao = CalculoPosicao.posicaoAtivos group 
+            let tickers = posicao |> Seq.map (fun x -> x.Ativo)
             let! cotacoes = Crawler.getCotacao tickers
-            return CalculoPosicao.mountCarteira (key.ToString()) group cotacoes
+            return CalculoPosicao.mountCarteira (key.ToString()) posicao cotacoes
         })
         |> Async.Sequential
     

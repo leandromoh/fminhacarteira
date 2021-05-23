@@ -29,7 +29,10 @@ let posicaoAtivos (operacoes: Operacao seq) : Posicao list =
     |> List.ofSeq
 
 let regra3 (xPercent: Decimal) x y =
-    Math.Round((y * xPercent) / x, 2)
+    if x <> 0M then
+        Math.Round((y * xPercent) / x, 2)
+    else
+        0M
 
 let percent = regra3 100m
 
@@ -42,9 +45,8 @@ let calculaPercent selector pos =
             |> Map.ofSeq
     (total, map)
 
-let mountCarteira nomeCarteira operacoes (cotacao: Map<string, decimal option>) : Carteira =
+let mountCarteira nomeCarteira posicao (cotacao: Map<string, decimal option>) : Carteira =
     let calcPatrimonio x = decimal x.Quantidade * defaultArg (cotacao.[x.Ativo]) x.PrecoMedio
-    let posicao = posicaoAtivos operacoes 
     let (totalAplicado, per1) = posicao |> calculaPercent (fun x -> x.FinanceiroCompra)
     let (patrimonio, per2) = posicao |> calculaPercent calcPatrimonio
     let ativos =  
@@ -61,6 +63,7 @@ let mountCarteira nomeCarteira operacoes (cotacao: Map<string, decimal option>) 
                 PercentValorPatrimonio = per2.[x.Ativo] 
             })
         |> List.ofSeq
+        |> List.sortBy (fun x -> x.Ativo)
     { Nome = nomeCarteira;
       TotalAplicado = totalAplicado;
       TotalPatrimonio = patrimonio;
