@@ -40,7 +40,7 @@ let getAtivos = async {
     let! tickers = 
             [ Cache.getOrCreate FII Crawler.getFIIs;
               Cache.getOrCreate ETF Crawler.getETFs; ]
-            |> Async.Parallel
+            |> Async.Sequential
 
     return Array.collect id tickers 
 }

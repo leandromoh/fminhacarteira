@@ -35,7 +35,7 @@ let private getFIIs2() =
     find url waitUntil script
 
 let getFIIs() = async {
-    let! tickers = [ getFIIs1(); getFIIs2(); ] |> Async.Parallel
+    let! tickers = [ getFIIs1(); getFIIs2(); ] |> Async.Sequential
     return Array.collect id tickers |> Array.distinct
 }
 
