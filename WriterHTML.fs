@@ -44,6 +44,9 @@ let private getStyle =
             width: 80%;
             margin-bottom: 5%; 
         }
+        #summary {
+            background-color: #FFC785;
+        }
     </style>
     "
 
@@ -91,7 +94,8 @@ let private getChart o =
     </script>"
 
 let private getSummaryTable o =
-    $"<table>
+    $"<a name=\"{o.Nome}\" />
+    <table>
         <tr>
             <th>Carteira</th>
             <th>Qtd Ativos</th>
@@ -147,6 +151,17 @@ let private getTable o =
     </table> {getChart o}
     "
 
+let private getSummary carteiras =
+    let getAnchor name = $"<td> <a href=\"#{name}\"> {name} </a> </td>"
+    let anchors =  Seq.map (fun x -> getAnchor x.Nome) carteiras
+
+    $"<table id=\"summary\">
+        <tr>
+             {String.Join('\n', anchors)}
+        </tr>
+    </table>
+    "
+
 let private getHTML carteiras =
     $"
     <!DOCTYPE html>
@@ -158,6 +173,8 @@ let private getHTML carteiras =
             {getStyle}
         </head>
         <body>
+            {getSummary carteiras}
+            <br />
             {String.Join('\n', carteiras |> Seq.map getTable)}
         </body>
     </html>
