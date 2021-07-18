@@ -24,15 +24,14 @@ let getNumeroTicker ativo =
     else None
 
 let getTipoAtivo fallback (ticker: string) =
-    let number = ticker.TrimEnd('F') |> getNumeroTicker
-    let temp = number |> Option.bind (function
+    ticker.TrimEnd('F') 
+    |> getNumeroTicker
+    |> Option.bind (function
         | n when n >= 3 && n <= 6 -> Some Acao
         | n when n >= 32 && n <= 35 -> Some BDR
         | _ -> None
     )
-    match temp with 
-    | Some x -> x 
-    | _  ->
+    |> Option.defaultWith (fun () -> 
         if rendafixaRegex |> List.exists (fun regex -> regex.IsMatch(ticker)) then 
             RendaFixa
         
@@ -40,6 +39,9 @@ let getTipoAtivo fallback (ticker: string) =
             Poupanca
 
         else 
-            match fallback |> Seq.tryFind (fun x -> x.Ticker = ticker) with
-            | Some x -> x.Tipo
-            | _ -> Outro
+            fallback 
+            |> Seq.tryFind (fun x -> x.Ticker = ticker)
+            |> Option.map (fun x -> x.Tipo)
+            |> Option.defaultValue Outro
+    )
+    
