@@ -3,8 +3,9 @@ module MinhaCarteira.ParserOperacao
 open System.IO
 open System
 open MinhaCarteira.Models
+open System.Linq
 
-let parseLine culture (line: string) =
+let parseLine culture (lineNumber: int, line: string) =
     let columns = line.Replace(';', '\t').Split('\t')
     let result = 
         try 
@@ -18,11 +19,13 @@ let parseLine culture (line: string) =
           }
           Ok operation
         with ex -> 
-          (line, ex) |> InvalidCSV |> Error
+          (lineNumber, line, ex) |> InvalidCSV |> Error
     Result.bind  
       (fun operation -> 
           if operation.QuantidadeCompra > 0 && operation.QuantidadeVenda > 0 then
-              (operation, "não pode comprar e vender na mesma operação") |> InvalidOperation |> Error
+              (lineNumber, operation, "não pode comprar e vender na mesma operação") 
+              |> InvalidOperation 
+              |> Error
           else
               Ok operation) 
       result
@@ -36,9 +39,15 @@ let split results =
     bons :> seq<_>, erros :> seq<_> 
 
 let parseCSV culture lines =
+    let lineNumbers = 
+      (1, Array.length lines) 
+      |> Enumerable.Range 
+      |> Array.ofSeq
+
     let ops = 
       lines
+         |> Array.zip lineNumbers
          |> Array.skip 1 // header
-         |> Array.where (String.IsNullOrWhiteSpace >> not)
+         |> Array.where (snd >> String.IsNullOrWhiteSpace >> not)
          |> Array.map (parseLine culture)
     ops
