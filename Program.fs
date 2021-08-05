@@ -36,6 +36,15 @@ let ops, errors =
        |> Seq.collect (File.ReadAllLines >> ParserOperacao.parseCSV culture)
        |> ParserOperacao.split
 
+if errors |> Seq.isEmpty |> not then
+    Console.WriteLine $"Program was aborted because {Seq.length errors} errors were found in CSV. See below:"
+    for error in errors do
+        Console.WriteLine $"\n\n\n {error}"
+    Console.WriteLine "\n\n\n"
+    failwith "aborted" 
+else
+    ()
+    
 let getAtivos = async {
     let! tickers = 
             [ Cache.getOrCreate FII Crawler.getFIIs;
@@ -76,5 +85,4 @@ let asyncMain() = async {
 let main argv =
     asyncMain() |> Async.RunSynchronously |> ignore
     printfn "fim"
-    Console.ReadLine() |> ignore
     0
