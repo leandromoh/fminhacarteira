@@ -41,6 +41,7 @@ if errors |> Seq.isEmpty |> not then
     for error in errors do
         Console.WriteLine $"\n\n\n {error}"
     Console.WriteLine "\n\n\n"
+    Console.Read() |> ignore
     failwith "aborted" 
 else
     ()
