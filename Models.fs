@@ -2,6 +2,15 @@ module MinhaCarteira.Models
 
 open System
 
+type OperacaoVenda = 
+    { PrecoMedio: decimal 
+      Preco: decimal
+      Quantidade: int 
+      Data: DateTime
+      Ativo: string }
+
+    member x.Lucro = decimal x.Quantidade * (x.Preco - x.PrecoMedio) 
+
 type TipoAtivo =
     | Acao
     | ETF

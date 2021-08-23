@@ -4,7 +4,7 @@ module MinhaCarteira.Extensions
 open MinhaCarteira.Models
 open System.Text.RegularExpressions
 
-let private numberAtEnd = new Regex(@"\d+$", RegexOptions.Compiled)
+let private numberAtEnd = Regex(@"\d+$", RegexOptions.Compiled)
 let private rendaFixa = 
     [
         "LCI"; "LCA"; "CDB"; 

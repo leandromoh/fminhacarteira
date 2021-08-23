@@ -5,17 +5,40 @@ open System
 
 // https://www.controlacao.com.br/blog/como-e-calculado-o-preco-medio-da-sua-carteira
 let precoMedio operacoes =
-    ({| pMedio = 0m; qtd = 0 |}, operacoes) 
+    ({| pMedio = 0m; qtd = 0; vendas = [ ] |}, operacoes) 
     ||> Seq.fold (fun acc op ->
             if op.QuantidadeVenda > 0 then
-                {| acc with qtd = acc.qtd - op.QuantidadeVenda |}
+                {| acc with 
+                    qtd = acc.qtd - op.QuantidadeVenda; 
+                    vendas = acc.vendas @  
+                             [ { 
+                                PrecoMedio = acc.pMedio; 
+                                Preco = op.Preco;
+                                Quantidade = op.QuantidadeVenda; 
+                                Data = op.DtNegociacao;
+                                Ativo = op.Ativo
+                            } ]
+                      |}
             else 
                 let x = acc.pMedio * decimal acc.qtd
                 let y = op.Preco * decimal op.QuantidadeCompra
                 let novaQtd = acc.qtd + op.QuantidadeCompra
                 let novoMedio = (x + y) / decimal novaQtd
-                {| pMedio = novoMedio; qtd = novaQtd |}
+                {| acc with pMedio = novoMedio; qtd = novaQtd |}
         ) 
+
+let calculaLucroVendas (operacoes: Operacao seq) =
+    operacoes 
+    |> Seq.groupBy (fun x -> x.Ativo.TrimEnd('F')) 
+    |> Seq.map (fun (ativo, ops) -> 
+        ops
+        |> Seq.sortBy (fun op -> op.DtNegociacao)
+        |> precoMedio
+        |> (fun x -> x.vendas)
+    )
+    |> Seq.collect id
+    |> Seq.sortBy (fun x -> x.Data)
+    |> List.ofSeq
 
 let posicaoAtivos (operacoes: Operacao seq) : Posicao list =
     operacoes 
@@ -45,7 +68,7 @@ let calculaPercent selector pos =
             |> Map.ofSeq
     (total, map)
 
-let mountCarteira nomeCarteira posicao (cotacao: Map<string, decimal option>) : Carteira =
+let mountCarteira nomeCarteira (posicao: seq<Posicao>) (cotacao: Map<string, decimal option>) : Carteira =
     let calcPatrimonio x = decimal x.Quantidade * defaultArg (cotacao.[x.Ativo]) x.PrecoMedio
     let (totalAplicado, per1) = posicao |> calculaPercent (fun x -> x.FinanceiroCompra)
     let (patrimonio, per2) = posicao |> calculaPercent calcPatrimonio

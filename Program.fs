@@ -5,10 +5,10 @@ open Microsoft.Extensions.Configuration
 open MinhaCarteira
 open MinhaCarteira.Models
 
-let culture = new CultureInfo("pt-BR");
+let culture = CultureInfo("pt-BR");
 
 let configuration =
-    let config = new ConfigurationBuilder()
+    let config = ConfigurationBuilder()
     let dir = Directory.GetCurrentDirectory()
     config
         .SetBasePath(dir)
@@ -74,10 +74,11 @@ let asyncMain() = async {
     
     let carteiras = carteirasAll |> Array.filter (fun x -> (Seq.isEmpty >> not) x.Ativos)
     let carteiraRV = CalculoPosicao.mountCarteiraMaster "RV" carteiras
+    let vendas = CalculoPosicao.calculaLucroVendas ops
 
     let! _ = carteiras
                 |> Array.append [| carteiraRV |]    
-                |> WriterHTML.saveAsHTML reportFilePath
+                |> WriterHTML.saveAsHTML reportFilePath vendas
                 |> Async.Ignore
     return ()
 }

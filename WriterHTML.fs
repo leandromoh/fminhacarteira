@@ -161,8 +161,50 @@ let private getSummary carteiras =
         </tr>
     </table>
     "
+let private getVendas (vendas: seq<OperacaoVenda>) =
+    let getSummaryTable = 
+        $"
+        <table>
+            <tr>
+                <th>Qtd Vendas</th>
+                <th>Qtd Ativos</th>
+                <th>Total Lucro</th>
+            </tr>
+            <tr>
+                <td>{vendas |> Seq.length}</td>
+                <td>{vendas |> Seq.map(fun x -> x.Ativo) |> Seq.distinct |> Seq.length}</td>
+                <td>{vendas |> Seq.sumBy(fun x-> x.Lucro):C}</td>
+            </tr>
+        </table>"
 
-let private getHTML carteiras =
+    let getRow p =
+        $"
+        <tr>
+            <td>{p.Data:g}</td>
+            <td>{p.Ativo}</td>
+            <td>{p.PrecoMedio:C}</td>
+            <td>{p.Preco:C}</td>
+            <td>{p.Quantidade}</td>
+            <td>{p.Lucro:C}</td>
+        </tr>
+        "
+
+    $" 
+    {getSummaryTable}
+    <table>
+        <tr>
+            <th>Data</th>
+            <th>Ativo</th>
+            <th>Pre. Medio</th>
+            <th>Preco</th>
+            <th>Qtd</th>
+            <th>Lucro</th>
+        </tr>
+        {String.Join('\n', vendas |> Seq.map getRow)}
+    </table>
+    "
+
+let private getHTML carteiras vendas =
     $"
     <!DOCTYPE html>
     <html>
@@ -176,11 +218,13 @@ let private getHTML carteiras =
             {getSummary carteiras}
             <br />
             {String.Join('\n', carteiras |> Seq.map getTable)}
+            <br />
+            {getVendas vendas}
         </body>
     </html>
     "
 
-let saveAsHTML (destinationPath: string) carteiras =
+let saveAsHTML (destinationPath: string) vendas carteiras =
     let pageTitle = Path.GetFileNameWithoutExtension(destinationPath)
-    let pageContent = getHTML carteiras 
+    let pageContent = getHTML carteiras vendas
     File.WriteAllTextAsync(destinationPath, pageContent) |> Async.AwaitTask
