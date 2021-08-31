@@ -40,7 +40,7 @@ type Carteira =
 
     member x.TotalLucro = x.TotalPatrimonio - x.TotalAplicado
 
-type Operacao =
+type OperacaoTrade =
     { DtNegociacao: DateTime
       Conta: int
       Ativo: string
@@ -52,6 +52,26 @@ type Operacao =
     member x.FinanceiroVenda = x.Preco * decimal x.QuantidadeVenda
     override x.ToString() = x.Ativo
 
+type OperacaoSplit =
+    { DtNegociacao: DateTime
+      Conta: int
+      Ativo: string
+      Quantidade: int }
+
+type Operacao = 
+   | Trade of OperacaoTrade
+   | Split of OperacaoSplit
+   
+   member x.Ativo = 
+      match x with
+      | Trade t -> t.Ativo
+      | Split s -> s.Ativo
+
+   member x.DtNegociacao = 
+      match x with
+      | Trade t -> t.DtNegociacao
+      | Split s -> s.DtNegociacao
+        
 type Posicao =
     { Ativo: string
       PrecoMedio: decimal

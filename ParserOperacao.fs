@@ -1,34 +1,52 @@
 module MinhaCarteira.ParserOperacao
 
-open System.IO
 open System
 open MinhaCarteira.Models
 open System.Linq
 
 let parseLine culture (lineNumber: int, line: string) =
-    let columns = line.Replace(';', '\t').Split('\t')
-    let result = 
-        try 
-          let operation = {
-             DtNegociacao = DateTime.Parse(columns.[0], culture)
-             Conta = Int32.Parse( columns.[1], culture)
-             Ativo = columns.[2].Replace("\"", String.Empty).Trim().ToUpper()
+    let columns = line.Replace(';', '\t').Split('\t') |> Array.map (fun x -> x.Trim())
+    try 
+      let dtNegociacao = DateTime.Parse(columns.[0], culture)
+      let conta = Int32.Parse( columns.[1], culture)
+      let ativo = columns.[2].Replace("\"", String.Empty).Trim().ToUpper()
+
+      let operation = 
+        if columns.[3].Equals("SPLIT", StringComparison.InvariantCultureIgnoreCase) then
+          Split {
+             DtNegociacao = dtNegociacao
+             Conta = conta
+             Ativo = ativo
+             Quantidade = Int32.Parse(columns.[4], culture)
+          }
+        else
+          Trade {
+             DtNegociacao = dtNegociacao
+             Conta = conta
+             Ativo = ativo
              Preco = Decimal.Parse(columns.[3], culture)
              QuantidadeCompra = Int32.Parse(columns.[4], culture)
              QuantidadeVenda = Int32.Parse(columns.[5], culture) 
           }
-          Ok operation
-        with ex -> 
-          (lineNumber, line, ex) |> InvalidCSV |> Error
-    Result.bind  
-      (fun operation -> 
-          if operation.QuantidadeCompra > 0 && operation.QuantidadeVenda > 0 then
-              (lineNumber, operation, "não pode comprar e vender na mesma operação") 
-              |> InvalidOperation 
-              |> Error
-          else
-              Ok operation) 
-      result
+      Ok operation
+    with ex -> 
+      (lineNumber, line, ex) |> InvalidCSV |> Error
+    
+    |> Result.bind (function 
+      op ->
+        match op with
+        | Trade t when t.QuantidadeCompra > 0 && t.QuantidadeVenda > 0 ->
+                Some "não pode comprar e vender na mesma operação"
+        | Split s when s.Quantidade < 2 -> 
+                Some "fator de proporção do split nao pode ser menor que 2"
+        | _ -> None
+        |> function
+           | None -> Ok op
+           | Some errorMsg -> 
+               (lineNumber, op, errorMsg) 
+               |> InvalidOperation 
+               |> Error
+    ) 
 
 let split results = 
     let bons, erros = ResizeArray<_>(), ResizeArray<_>()  

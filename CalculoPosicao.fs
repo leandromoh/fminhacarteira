@@ -6,25 +6,34 @@ open System
 // https://www.controlacao.com.br/blog/como-e-calculado-o-preco-medio-da-sua-carteira
 let precoMedio operacoes =
     ({| pMedio = 0m; qtd = 0; vendas = [ ] |}, operacoes) 
-    ||> Seq.fold (fun acc op ->
-            if op.QuantidadeVenda > 0 then
+    ||> Seq.fold 
+        (fun acc (opX : Operacao) ->
+            match opX with
+
+            | Split split -> 
                 {| acc with 
-                    qtd = acc.qtd - op.QuantidadeVenda; 
-                    vendas = acc.vendas @  
-                             [ { 
-                                PrecoMedio = acc.pMedio; 
-                                Preco = op.Preco;
-                                Quantidade = op.QuantidadeVenda; 
-                                Data = op.DtNegociacao;
-                                Ativo = op.Ativo
-                            } ]
-                      |}
-            else 
-                let x = acc.pMedio * decimal acc.qtd
-                let y = op.Preco * decimal op.QuantidadeCompra
-                let novaQtd = acc.qtd + op.QuantidadeCompra
-                let novoMedio = (x + y) / decimal novaQtd
-                {| acc with pMedio = novoMedio; qtd = novaQtd |}
+                    pMedio = acc.pMedio / decimal split.Quantidade; 
+                    qtd = acc.qtd * split.Quantidade |}
+                    
+            | Trade op -> 
+                if op.QuantidadeVenda > 0 then
+                    {| acc with 
+                        qtd = acc.qtd - op.QuantidadeVenda; 
+                        vendas = acc.vendas @  
+                                 [ { 
+                                    PrecoMedio = acc.pMedio; 
+                                    Preco = op.Preco;
+                                    Quantidade = op.QuantidadeVenda; 
+                                    Data = op.DtNegociacao;
+                                    Ativo = op.Ativo
+                                } ]
+                          |}
+                else 
+                    let x = acc.pMedio * decimal acc.qtd
+                    let y = op.Preco * decimal op.QuantidadeCompra
+                    let novaQtd = acc.qtd + op.QuantidadeCompra
+                    let novoMedio = (x + y) / decimal novaQtd
+                    {| acc with pMedio = novoMedio; qtd = novaQtd |}
         ) 
 
 let calculaLucroVendas (operacoes: Operacao seq) =
