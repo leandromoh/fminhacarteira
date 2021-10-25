@@ -28,7 +28,7 @@ let getTipoAtivo fallback (ticker: string) =
     |> getNumeroTicker
     |> Option.bind (function
         | n when n >= 3 && n <= 6 -> Some Acao
-        | n when n >= 32 && n <= 35 -> Some BDR
+        | n when n >= 31 && n <= 35 -> Some BDR
         | _ -> None
     )
     |> Option.defaultWith (fun () -> 
