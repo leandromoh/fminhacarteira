@@ -22,9 +22,11 @@ let operationsFilesPath =
         |> Seq.map (fun x -> x.Value)
 
 let reportDirectoryPath = configuration.["output:reportDirectoryPath"];
-let reportFilePath =  Path.Combine(reportDirectoryPath, 
-                        let format = "yyyy.MM.dd.HH.mm.ss" in 
-                        $"minhacarteira.{DateTime.Now.ToString format}.html")
+
+let reportFilePath (moment: DateTime) (rentabilidade: string) = 
+    let format = "yyyy.MM.dd.HH.mm.ss"
+    let fileName = $"minhacarteira.{moment.ToString format} {rentabilidade}.html"
+    Path.Combine(reportDirectoryPath, fileName)
 
 let ops, errors = 
     operationsFilesPath
@@ -55,7 +57,7 @@ let getAtivos = async {
     return Array.collect id tickers 
 }
 
-let asyncMain() = async {
+let asyncMain _ = async {
     let! ativos = getAtivos 
     let gruposAtivo = 
         ops 
@@ -76,15 +78,19 @@ let asyncMain() = async {
     let carteiraRV = CalculoPosicao.mountCarteiraMaster "RV" carteiras
     let vendas = CalculoPosicao.calculaLucroVendas ops
 
+    let rentabilidade = let c = carteiraRV in
+                        WriterHTML.regra3Pretty c.TotalAplicado c.TotalPatrimonio
+
+    let fileName = reportFilePath DateTime.Now rentabilidade
     let! _ = carteiras
                 |> Array.append [| carteiraRV |]    
-                |> WriterHTML.saveAsHTML reportFilePath vendas
-                |> Async.Ignore
+                |> WriterHTML.saveAsHTML fileName vendas
+
     return ()
 }
 
 [<EntryPoint>]
 let main argv =
-    asyncMain() |> Async.RunSynchronously |> ignore
+    argv |> asyncMain |> Async.RunSynchronously |> ignore
     printfn "fim"
     0

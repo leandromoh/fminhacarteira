@@ -8,7 +8,7 @@ open MinhaCarteira.CalculoPosicao
 
 let private culture = CultureInfo.InvariantCulture
 
-let private regra3Pretty x y =
+let regra3Pretty x y =
     let d = (percent x y) - 100m
     let s = if d >= 0m then "+" else "-"
     let abs = Math.Abs(d)
@@ -204,12 +204,12 @@ let private getVendas (vendas: seq<OperacaoVenda>) =
     </table>
     "
 
-let private getHTML carteiras vendas =
+let private getHTML carteiras vendas title =
     $"
     <!DOCTYPE html>
     <html>
         <head>
-            <title>{DateTime.Now:g}</title>
+            <title>{title}</title>
             <script src=\"https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js\"></script>
             <script src=\"https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@0.4.0/dist/chartjs-plugin-datalabels.min.js\"></script>
             {getStyle}
@@ -226,5 +226,5 @@ let private getHTML carteiras vendas =
 
 let saveAsHTML (destinationPath: string) vendas carteiras =
     let pageTitle = Path.GetFileNameWithoutExtension(destinationPath)
-    let pageContent = getHTML carteiras vendas
+    let pageContent = getHTML carteiras vendas pageTitle
     File.WriteAllTextAsync(destinationPath, pageContent) |> Async.AwaitTask
