@@ -36,6 +36,7 @@ type Carteira =
     { Nome: string
       TotalAplicado: decimal
       TotalPatrimonio: decimal
+      LucroVenda: decimal
       Ativos: seq<CarteiraAtivo> }
 
     member x.TotalLucro = x.TotalPatrimonio - x.TotalAplicado
