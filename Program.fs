@@ -59,6 +59,14 @@ let getAtivos = async {
 
 let asyncMain _ = async {
     let! ativos = getAtivos 
+
+    let vendas = CalculoPosicao.calculaLucroVendas ops
+    let lucroVendaPorTipoAtivo = 
+        vendas 
+        |> Seq.groupBy (fun op -> getTipoAtivo ativos op.Ativo)
+        |> Seq.map (fun (tipo, ops) ->  tipo , ops |> Seq.sumBy (fun x -> x.Lucro))
+        |> Map.ofSeq
+
     let gruposAtivo = 
         ops 
         |> Seq.groupBy (fun op -> getTipoAtivo ativos op.Ativo)
@@ -70,13 +78,14 @@ let asyncMain _ = async {
             let posicao = CalculoPosicao.posicaoAtivos group 
             let tickers = posicao |> Seq.map (fun x -> x.Ativo)
             let! cotacoes = Crawler.getCotacao tickers
-            return CalculoPosicao.mountCarteira (key.ToString()) posicao cotacoes
+            let _, venda = lucroVendaPorTipoAtivo.TryGetValue(key)
+
+            return CalculoPosicao.mountCarteira (string key) posicao cotacoes venda
         })
         |> Async.Sequential
     
     let carteiras = carteirasAll |> Array.filter (fun x -> (Seq.isEmpty >> not) x.Ativos)
     let carteiraRV = CalculoPosicao.mountCarteiraMaster "RV" carteiras
-    let vendas = CalculoPosicao.calculaLucroVendas ops
 
     let rentabilidade = let c = carteiraRV in
                         WriterHTML.regra3Pretty c.TotalAplicado c.TotalPatrimonio
@@ -91,6 +100,13 @@ let asyncMain _ = async {
 
 [<EntryPoint>]
 let main argv =
-    argv |> asyncMain |> Async.RunSynchronously |> ignore
-    printfn "fim"
-    0
+    try
+        argv |> asyncMain |> Async.RunSynchronously |> ignore
+        printfn "fim"
+        0
+    with
+    | ex -> 
+       Console.WriteLine(ex)
+       Console.Read() |> ignore
+       -1
+

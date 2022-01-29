@@ -103,6 +103,7 @@ let private getSummaryTable o =
             <th>Total Patrimonio</th>
             <th>Total Lucro</th>
             <th>%% Rentabilidade</th>
+            <th>Total Venda</th>
         </tr>
         <tr>
             <td>{o.Nome}</td>
@@ -111,6 +112,7 @@ let private getSummaryTable o =
             <td>{o.TotalPatrimonio:C}</td>
             <td>{o.TotalLucro:C}</td>
             <td>{regra3Pretty o.TotalAplicado o.TotalPatrimonio}</td>
+            <td>{o.LucroVenda:C}</td>
         </tr>
     </table>"
 

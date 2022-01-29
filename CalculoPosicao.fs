@@ -77,7 +77,7 @@ let calculaPercent selector pos =
             |> Map.ofSeq
     (total, map)
 
-let mountCarteira nomeCarteira (posicao: seq<Posicao>) (cotacao: Map<string, decimal option>) : Carteira =
+let mountCarteira nomeCarteira (posicao: seq<Posicao>) (cotacao: Map<string, decimal option>) lucroVendas : Carteira =
     let calcPatrimonio x = decimal x.Quantidade * defaultArg (cotacao.[x.Ativo]) x.PrecoMedio
     let (totalAplicado, per1) = posicao |> calculaPercent (fun x -> x.FinanceiroCompra)
     let (patrimonio, per2) = posicao |> calculaPercent calcPatrimonio
@@ -99,11 +99,13 @@ let mountCarteira nomeCarteira (posicao: seq<Posicao>) (cotacao: Map<string, dec
     { Nome = nomeCarteira;
       TotalAplicado = totalAplicado;
       TotalPatrimonio = patrimonio;
+      LucroVenda = lucroVendas
       Ativos = ativos }
 
 let mountCarteiraMaster nomeCarteira carteiras : Carteira =
     let aplicadoMaster = carteiras |> Seq.sumBy(fun x -> x.TotalAplicado)
     let patrimonioMaster = carteiras |> Seq.sumBy(fun x -> x.TotalPatrimonio)
+    let LucroVendaMaster = carteiras |> Seq.sumBy(fun x -> x.LucroVenda)
     let ativos = 
         carteiras 
         |> Seq.map (fun c -> 
@@ -123,5 +125,6 @@ let mountCarteiraMaster nomeCarteira carteiras : Carteira =
         Nome = nomeCarteira;
         TotalAplicado = aplicadoMaster;
         TotalPatrimonio = patrimonioMaster;
+        LucroVenda = LucroVendaMaster
         Ativos = ativos
     }
