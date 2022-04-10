@@ -57,6 +57,10 @@ let split results =
     bons :> seq<_>, erros :> seq<_> 
 
 let parseCSV culture lines =
+    let isValidLine (_, text) =
+      let isInvalid = String.IsNullOrWhiteSpace(text) || text.TrimStart().StartsWith("#")
+      not isInvalid
+
     let lineNumbers = 
       (1, Array.length lines) 
       |> Enumerable.Range 
@@ -66,6 +70,6 @@ let parseCSV culture lines =
       lines
          |> Array.zip lineNumbers
          |> Array.skip 1 // header
-         |> Array.where (snd >> String.IsNullOrWhiteSpace >> not)
+         |> Array.where isValidLine
          |> Array.map (parseLine culture)
     ops
