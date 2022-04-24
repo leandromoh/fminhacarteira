@@ -80,7 +80,7 @@ let getCotacao ativos =
         |> Task.WhenAll |> Async.AwaitTask
 
     return moneys
-        |> Array.map ((fun s -> s.Replace(",", ".")) >> Decimal.TryParse >> 
+        |> Seq.map ((fun s -> s.Replace(",", ".")) >> Decimal.TryParse >> 
             function 
             | true, d -> Some d
             | _ -> None)
