@@ -45,28 +45,39 @@ let getETFs() =
     let script = "() => [...document.querySelectorAll('#etfs td[title]')].map(x => x.title)"
     find url waitUntil script
 
-let getCotacao ativos = async {  
+let getCotacao ativos = 
+    let getFromGoogle (page: Page) ativo = task {
+        let! _ = page.GoToAsync($"http://www.google.com/search?q=%s{ativo}")
+        let cellSelector = "div[eid] div[data-ved] span[jscontroller] span[jsname]"   
+        return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
+    }
+    let getFromBing (page: Page) ativo = task {
+        let! _ = page.GoToAsync($"https://www.bing.com/search?q=%s{ativo}")
+        let cellSelector = "#Finance_Quote"   
+        return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
+    }
+    let searchIn = [ getFromGoogle; getFromBing; ]
+    async {  
     use! browser = getBrowser()
-    use! page = browser.NewPageAsync() |> Async.AwaitTask  
     let! moneys = 
         ativos
-        |> Seq.map(fun ativo -> async {  
-            let! _ = page.GoToAsync($"http://www.google.com/search?q=%s{ativo}") |> Async.AwaitTask
-            let cellSelector = "div[eid] div[data-ved] span[jscontroller] span[jsname]"   
-            let! price = async {
-                try
-                    return!
-                         page
-                         .QuerySelectorAsync(cellSelector)
-                         .EvaluateFunctionAsync<string>("_ => _.innerText")
-                         |> Async.AwaitTask
-                with 
-                | _ -> return! Task.FromResult ("not found") |> Async.AwaitTask
-            }
-
-            return price
-        }) 
-        |> Async.Sequential
+        |> Seq.map(fun ativo -> task {  
+                use! page = browser.NewPageAsync()
+                let mutable succeed = false
+                let mutable i = 0
+                let mutable quote = "not found"
+                while not succeed && i < searchIn.Length do
+                    try
+                        let f = searchIn[i]
+                        let! quote2 = f page ativo
+                        quote <- quote2
+                        succeed <- true
+                    with 
+                    | _ -> ()
+                    i <- i + 1
+                return quote
+            }) 
+        |> Task.WhenAll |> Async.AwaitTask
 
     return moneys
         |> Array.map ((fun s -> s.Replace(",", ".")) >> Decimal.TryParse >> 
