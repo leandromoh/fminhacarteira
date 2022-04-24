@@ -18,6 +18,9 @@ let private rendafixaRegex =
 let private poupancaRegex = 
     Regex(@"(^|\s)poupan.a(\s|$)", RegexOptions.IgnoreCase)
 
+let private is100CDIRegex = 
+    Regex(@"^(?=.*100)(?=.*CDI(\s|$)).{6,}$", RegexOptions.IgnoreCase)
+
 let getNumeroTicker ativo =
     let m = numberAtEnd.Match(ativo)
     if m.Success then m.Value |> int |> Some
@@ -32,12 +35,12 @@ let getTipoAtivo fallback (ticker: string) =
         | _ -> None
     )
     |> Option.defaultWith (fun () -> 
-        if rendafixaRegex |> List.exists (fun regex -> regex.IsMatch(ticker)) then 
+        if poupancaRegex.IsMatch(ticker) || is100CDIRegex.IsMatch(ticker) then
+            Caixa
+
+        elif rendafixaRegex |> List.exists (fun regex -> regex.IsMatch(ticker)) then 
             RendaFixa
         
-        elif poupancaRegex.IsMatch(ticker) then
-            Poupanca
-
         else 
             fallback 
             |> Seq.tryFind (fun x -> x.Ticker = ticker)

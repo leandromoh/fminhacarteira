@@ -17,7 +17,7 @@ type TipoAtivo =
     | BDR
     | FII
     | RendaFixa
-    | Poupanca
+    | Caixa
     | Outro
 
 type Ativo = { Ticker: string; Tipo: TipoAtivo }
