@@ -61,15 +61,14 @@ let parseCSV culture lines =
       let isInvalid = String.IsNullOrWhiteSpace(text) || text.TrimStart().StartsWith("#")
       not isInvalid
 
-    let lineNumbers = 
-      (1, Array.length lines) 
+    let lineNumbers: seq<int> = 
+     (1, Seq.length lines) 
       |> Enumerable.Range 
-      |> Array.ofSeq
 
     let ops = 
       lines
-         |> Array.zip lineNumbers
-         |> Array.skip 1 // header
-         |> Array.where isValidLine
-         |> Array.map (parseLine culture)
+         |> Seq.zip lineNumbers
+         |> Seq.skip 1 // header
+         |> Seq.where isValidLine
+         |> Seq.map (parseLine culture)
     ops
