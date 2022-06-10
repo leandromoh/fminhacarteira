@@ -12,14 +12,23 @@ let private rendaFixa =
         "IPCA"; "CDI"; "SELIC"; "Tesouro" 
     ]
 
-let private rendafixaRegex = 
-    rendaFixa |> List.map (fun produto -> Regex($"(^|\s){produto}(\s|$)", RegexOptions.IgnoreCase))
+let private matchAnyRegex regexes =
+    fun ticker -> regexes |> List.exists (fun (regex: Regex) -> regex.IsMatch(ticker))
+
+let private isRendaFixa = 
+    rendaFixa 
+    |> List.map (fun produto -> Regex($"(^|\s){produto}(\s|$)", RegexOptions.IgnoreCase))
+    |> matchAnyRegex
 
 let private poupancaRegex = 
     Regex(@"(^|\s)poupan.a(\s|$)", RegexOptions.IgnoreCase)
 
-let private is100CDIRegex = 
+let private isCDI100Regex = 
     Regex(@"^(?=.*100)(?=.*CDI(\s|$)).{6,}$", RegexOptions.IgnoreCase)
+
+let private isCaixa = 
+    [ poupancaRegex ; isCDI100Regex ] 
+    |> matchAnyRegex
 
 let getNumeroTicker ativo =
     let m = numberAtEnd.Match(ativo)
@@ -35,10 +44,10 @@ let getTipoAtivo fallback (ticker: string) =
         | _ -> None
     )
     |> Option.defaultWith (fun () -> 
-        if poupancaRegex.IsMatch(ticker) || is100CDIRegex.IsMatch(ticker) then
+        if isCaixa ticker then
             Caixa
 
-        elif rendafixaRegex |> List.exists (fun regex -> regex.IsMatch(ticker)) then 
+        elif isRendaFixa ticker then 
             RendaFixa
         
         else 
