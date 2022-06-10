@@ -39,6 +39,12 @@ let getFIIs() = async {
     return tickers |> Array.collect id |> Array.distinct
 }
 
+let getUnits() = 
+    let url = "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/consultas/mercado-a-vista/units/"
+    let waitUntil = "() => true"
+    let script = "() => [...document.querySelectorAll('#conteudo-principal table tbody td:nth-child(2)')].map(x => x.innerHTML)"
+    find url waitUntil script
+
 let getETFs() = 
     let url = "https://br.investing.com/etfs/brazil-etfs"
     let waitUntil = "() => $('#etfs td[title]').length > 40"
