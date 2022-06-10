@@ -45,8 +45,6 @@ if errors |> Seq.isEmpty |> not then
     Console.WriteLine "\n\n\n"
     Console.Read() |> ignore
     failwith "aborted" 
-else
-    ()
     
 let getAtivos = async {
     let! tickers = 
@@ -84,15 +82,15 @@ let asyncMain _ = async {
         })
         |> Async.Sequential
     
-    let carteiras = carteirasAll |> Array.filter (fun x -> (Seq.isEmpty >> not) x.Ativos)
-    let carteiraRV = CalculoPosicao.mountCarteiraMaster "RV" carteiras
+    let carteiras = carteirasAll |> Array.filter (fun x -> x.TotalPatrimonio <> 0M)
+    let carteiraTudo = CalculoPosicao.mountCarteiraMaster "Tudo" carteiras
 
-    let rentabilidade = let c = carteiraRV in
+    let rentabilidade = let c = carteiraTudo in
                         WriterHTML.regra3Pretty c.TotalAplicado c.TotalPatrimonio
 
     let fileName = reportFilePath DateTime.Now rentabilidade
     let! _ = carteiras
-                |> Array.append [| carteiraRV |]    
+                |> Array.append [| carteiraTudo |]    
                 |> WriterHTML.saveAsHTML fileName vendas
 
     return ()
