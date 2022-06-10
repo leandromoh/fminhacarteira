@@ -36,7 +36,7 @@ let private getFIIs2() =
 
 let getFIIs() = async {
     let! tickers = [ getFIIs1(); getFIIs2(); ] |> Async.Sequential
-    return Array.collect id tickers |> Array.distinct
+    return tickers |> Array.collect id |> Array.distinct
 }
 
 let getETFs() = 
@@ -77,7 +77,8 @@ let getCotacao ativos =
                     i <- i + 1
                 return quote
             }) 
-        |> Task.WhenAll |> Async.AwaitTask
+        |> Task.WhenAll 
+        |> Async.AwaitTask
 
     return moneys
         |> Seq.map ((fun s -> s.Replace(",", ".")) >> Decimal.TryParse >> 
