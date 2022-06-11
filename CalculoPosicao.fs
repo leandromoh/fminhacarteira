@@ -36,31 +36,45 @@ let precoMedio operacoes =
                     {| acc with pMedio = novoMedio; qtd = novaQtd |}
         ) 
 
-let calculaLucroVendas (operacoes: Operacao seq) =
+let private mapPrecoMedio mapping (operacoes: Operacao seq) = 
     operacoes 
     |> Seq.groupBy (fun x -> x.Ativo.TrimEnd('F')) 
     |> Seq.map (fun (ativo, ops) -> 
         ops
         |> Seq.sortBy (fun op -> op.DtNegociacao)
         |> precoMedio
-        |> (fun x -> x.vendas)
+        |> mapping ativo
     )
-    |> Seq.collect id
-    |> Seq.sortBy (fun x -> x.Data)
-    |> List.ofSeq
-
-let posicaoAtivos (operacoes: Operacao seq) : Posicao list =
+    
+let calculaLucroVendas operacoes =
     operacoes 
-    |> Seq.groupBy (fun x -> x.Ativo.TrimEnd('F')) 
-    |> Seq.map (fun (ativo, ops) -> 
-        ops
-        |> Seq.sortBy (fun op -> op.DtNegociacao)
-        |> precoMedio
-        |> fun x -> { Ativo = ativo; Quantidade = x.qtd; PrecoMedio = x.pMedio })
-    |> Seq.filter (fun x -> x.Quantidade <> 0)
-    |> List.ofSeq
+    |> mapPrecoMedio (fun _ x -> x.vendas)
+    |> Seq.collect id
+    |> Seq.groupBy (fun x ->
+        {| 
+            data = x.Data
+            ativo = x.Ativo
+            pMedio = x.PrecoMedio
+            preco = x.Preco 
+        |})
+    |> Seq.map (fun (key, ops) -> 
+        { 
+            Data = key.data
+            Ativo = key.ativo
+            PrecoMedio = key.pMedio
+            Preco = key.preco
+            Quantidade = ops |> Seq.sumBy (fun x -> x.Quantidade)
+        })
+    |> Seq.sortBy (fun x -> x.Data)
+    |> Seq.toList
 
-let regra3 (xPercent: Decimal) x y =
+let posicaoAtivos operacoes : Posicao list =
+    operacoes 
+    |> mapPrecoMedio (fun ativo x -> { Ativo = ativo; Quantidade = x.qtd; PrecoMedio = x.pMedio })
+    |> Seq.filter (fun x -> x.Quantidade <> 0)
+    |> Seq.toList
+
+let regra3 (xPercent: decimal) x y =
     if x <> 0M then
         Math.Round((y * xPercent) / x, 2)
     else
