@@ -1,6 +1,19 @@
 [<AutoOpen>]
 module MinhaCarteira.Extensions
 
+open System.Threading.Tasks
+
+type System.Threading.Tasks.Task with
+    static member Sequential (funcs: seq<(unit -> Task<'a>)>) : Task<'a[]> = 
+        task {
+            let result = ResizeArray()
+            for fn in funcs do
+                let! x = fn ()
+                result.Add x
+
+            return result.ToArray()
+        }
+
 open MinhaCarteira.Models
 open System.Text.RegularExpressions
 

@@ -4,6 +4,7 @@ open System.IO
 open Microsoft.Extensions.Configuration
 open MinhaCarteira
 open MinhaCarteira.Models
+open System.Threading.Tasks
 
 let culture = CultureInfo("pt-BR");
 
@@ -56,7 +57,7 @@ let getAtivos = async {
     return tickers |> Array.collect id
 }
 
-let asyncMain _ = async {
+let asyncMain _ = task {
     let! ativos = getAtivos 
 
     let vendas = CalculoPosicao.calculaLucroVendas ops
@@ -73,7 +74,7 @@ let asyncMain _ = async {
 
     let! carteirasAll = 
         gruposAtivo
-        |> Seq.map(fun (key, group) -> async {
+        |> Seq.map(fun (key, group) -> fun () -> task {
             let posicao = CalculoPosicao.posicaoAtivos group 
             let tickers = posicao |> Seq.map (fun x -> x.Ativo)
             let! cotacoes = Crawler.getCotacao tickers
@@ -81,9 +82,9 @@ let asyncMain _ = async {
 
             return CalculoPosicao.mountCarteira (string key) posicao cotacoes venda
         })
-        |> Async.Sequential
+        |> Task.Sequential
     
-    let carteiras = carteirasAll |> Array.filter (fun x -> x.TotalPatrimonio <> 0M)
+    let carteiras = carteirasAll |> Seq.filter (fun x -> x.TotalPatrimonio <> 0M)
     let carteiraTudo = CalculoPosicao.mountCarteiraMaster "Tudo" carteiras
 
     let rentabilidade = let c = carteiraTudo in
@@ -91,7 +92,7 @@ let asyncMain _ = async {
 
     let fileName = reportFilePath DateTime.Now rentabilidade
     let! _ = carteiras
-                |> Array.append [| carteiraTudo |]    
+                |> Seq.append [| carteiraTudo |]    
                 |> WriterHTML.saveAsHTML fileName vendas
 
     return ()
@@ -100,7 +101,7 @@ let asyncMain _ = async {
 [<EntryPoint>]
 let main argv =
     try
-        argv |> asyncMain |> Async.RunSynchronously |> ignore
+        argv |> asyncMain |> Async.AwaitTask |> Async.RunSynchronously |> ignore
         printfn "fim"
         0
     with
