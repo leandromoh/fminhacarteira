@@ -28,6 +28,16 @@ let parseLine culture (lineNumber: int, line: string) =
              QuantidadeCompra = Int32.Parse(columns.[4], culture)
              QuantidadeVenda = Int32.Parse(columns.[5], culture) 
           }
+      
+      let operation = 
+        match operation with 
+        | Trade t when conta = 0 -> 
+              RendaFixa { 
+                    Dados = t  
+                    ValorAtual = Decimal.Parse(columns.[6], culture) 
+                  }
+        | _ -> operation
+
       Ok operation
     with ex -> 
       (lineNumber, line, ex) |> InvalidCSV |> Error
@@ -35,6 +45,8 @@ let parseLine culture (lineNumber: int, line: string) =
     |> Result.bind (function 
       op ->
         match op with
+        | RendaFixa f when f.Dados.QuantidadeCompra > 0 && f.Dados.QuantidadeVenda > 0 ->
+                Some "não pode comprar e vender na mesma operação"
         | Trade t when t.QuantidadeCompra > 0 && t.QuantidadeVenda > 0 ->
                 Some "não pode comprar e vender na mesma operação"
         | Split s when s.Quantidade < 2 -> 

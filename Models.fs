@@ -20,6 +20,11 @@ type TipoAtivo =
     | Caixa
     | Outro
 
+    member x.isRV = 
+      match x with
+      | Acao | ETF | BDR | FII -> true
+      | _ -> false
+
 type Ativo = { Ticker: string; Tipo: TipoAtivo }
 
 type CarteiraAtivo =
@@ -59,27 +64,46 @@ type OperacaoSplit =
       Ativo: string
       Quantidade: int }
 
+type OperacaoRendaFixa =
+    { Dados: OperacaoTrade
+      ValorAtual: decimal }
+
 type Operacao = 
    | Trade of OperacaoTrade
+   | RendaFixa of OperacaoRendaFixa
    | Split of OperacaoSplit
    
    member x.Ativo = 
       match x with
+      | RendaFixa { Dados = t } 
       | Trade t -> t.Ativo
       | Split s -> s.Ativo
 
    member x.DtNegociacao = 
       match x with
+      | RendaFixa { Dados = t } 
       | Trade t -> t.DtNegociacao
       | Split s -> s.DtNegociacao
         
-type Posicao =
+type PosicaoRV =
     { Ativo: string
       PrecoMedio: decimal
       Quantidade: int }
 
     member x.FinanceiroCompra = x.PrecoMedio * decimal x.Quantidade
     override x.ToString() = $"{x.Quantidade} {x.Ativo} {x.PrecoMedio}"
+
+type PosicaoRF =
+    { Ativo: string
+      PrecoPago: decimal
+      PrecoAtual: decimal }
+
+    member x.Lucro = x.PrecoAtual - x.PrecoPago
+    override x.ToString() = $"{x.Ativo} {x.PrecoPago} {x.PrecoAtual} "
+
+type Posicao = 
+   | RV of PosicaoRV
+   | RF of PosicaoRF
 
 type OperationError = 
     | InvalidCSV of lineNumber: int * record: string * Exception

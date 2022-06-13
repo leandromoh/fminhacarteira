@@ -15,6 +15,7 @@ let precoMedio operacoes =
                     pMedio = acc.pMedio / decimal split.Quantidade; 
                     qtd = acc.qtd * split.Quantidade |}
                     
+            | RendaFixa { Dados = op }
             | Trade op -> 
                 if op.QuantidadeVenda > 0 then
                     {| acc with 

@@ -75,12 +75,38 @@ let asyncMain _ = task {
     let! carteirasAll = 
         gruposAtivo
         |> Seq.map(fun (key, group) -> fun () -> task {
-            let posicao = CalculoPosicao.posicaoAtivos group 
-            let tickers = posicao |> Seq.map (fun x -> x.Ativo)
-            let! cotacoes = Crawler.getCotacao tickers
-            let _, venda = lucroVendaPorTipoAtivo.TryGetValue(key)
+            if key.isRV = false then
+                let posicaoRF = 
+                    group 
+                    |> Seq.choose (fun f -> 
+                        match f with 
+                        | RendaFixa t -> Some t
+                        | _ -> None)
 
-            return CalculoPosicao.mountCarteira (string key) posicao cotacoes venda
+                let posicao = 
+                    posicaoRF
+                    |> Seq.map (fun p -> 
+                    {
+                        Ativo = p.Dados.Ativo
+                        PrecoMedio = p.Dados.Preco
+                        Quantidade = p.Dados.QuantidadeCompra
+                    })     
+
+                let cotacoes =   
+                    posicaoRF
+                    |> Seq.map (fun p -> p.Dados.Ativo, Some p.ValorAtual)
+                    |> Map.ofSeq   
+                
+                let venda = 0M
+                    
+                return CalculoPosicao.mountCarteira (string key) posicao cotacoes venda
+            else
+                let posicao = CalculoPosicao.posicaoAtivos group 
+                let tickers = posicao |> Seq.map (fun x -> x.Ativo)
+                let! cotacoes = Crawler.getCotacao tickers
+                let _, venda = lucroVendaPorTipoAtivo.TryGetValue(key)
+
+                return CalculoPosicao.mountCarteira (string key) posicao cotacoes venda
         })
         |> Task.Sequential
     

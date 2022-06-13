@@ -48,7 +48,7 @@ let getNumeroTicker ativo =
     if m.Success then m.Value |> int |> Some
     else None
 
-let getTipoAtivo fallback (ticker: string) =
+let getTipoAtivo fallback (ticker: string) : TipoAtivo =
     ticker.TrimEnd('F') 
     |> getNumeroTicker
     |> Option.bind (function
@@ -61,7 +61,7 @@ let getTipoAtivo fallback (ticker: string) =
             Caixa
 
         elif isRendaFixa ticker then 
-            RendaFixa
+            TipoAtivo.RendaFixa
         
         else 
             fallback 
