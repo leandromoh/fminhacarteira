@@ -50,6 +50,7 @@ if errors |> Seq.isEmpty |> not then
 let getAtivos = async {
     let! tickers = 
             [ Cache.getOrCreate FII Crawler.getFIIs;
+              Cache.getOrCreate Fiagro Crawler.getFiagro; 
               Cache.getOrCreate ETF Crawler.getETFs; 
               Cache.getOrCreate Acao Crawler.getUnits; ]
             |> Async.Sequential

@@ -39,6 +39,12 @@ let getFIIs() = async {
     return tickers |> Array.collect id |> Array.distinct
 }
 
+let getFiagro() = 
+    let url = "https://www.clubefii.com.br/fundos-imobiliarios/51639/Agronegocio"
+    let waitUntil = "() => $('tr.tabela_principal td:first-child a').length > 10"
+    let script = "() => [...document.querySelectorAll('tr.tabela_principal td:first-child a')].map(x => x.innerHTML)"
+    find url waitUntil script
+
 let getUnits() = 
     let url = "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/consultas/mercado-a-vista/units/"
     let waitUntil = "() => true"

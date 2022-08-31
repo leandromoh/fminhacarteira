@@ -12,9 +12,14 @@ let precoMedio operacoes =
 
             | Split split -> 
                 {| acc with 
-                    pMedio = acc.pMedio / decimal split.Quantidade; 
-                    qtd = acc.qtd * split.Quantidade |}
-                    
+                    pMedio = acc.pMedio / split.Quantidade; 
+                    qtd = (decimal acc.qtd * split.Quantidade) |> int  |}
+
+            | Inplit inplit -> 
+                {| acc with 
+                    pMedio = acc.pMedio * inplit.Quantidade; 
+                    qtd = (decimal acc.qtd / inplit.Quantidade) |> int |}
+
             | Trade op -> 
                 if op.QuantidadeVenda > 0 then
                     {| acc with 

@@ -16,6 +16,7 @@ type TipoAtivo =
     | ETF
     | BDR
     | FII
+    | Fiagro
     | RendaFixa
     | Caixa
     | Outro
@@ -57,22 +58,31 @@ type OperacaoSplit =
     { DtNegociacao: DateTime
       Conta: int
       Ativo: string
-      Quantidade: int }
+      Quantidade: decimal }
+
+type OperacaoInplit =
+    { DtNegociacao: DateTime
+      Conta: int
+      Ativo: string
+      Quantidade: decimal }
 
 type Operacao = 
    | Trade of OperacaoTrade
    | Split of OperacaoSplit
-   
+   | Inplit of OperacaoInplit
+
    member x.Ativo = 
       match x with
       | Trade t -> t.Ativo
       | Split s -> s.Ativo
+      | Inplit s -> s.Ativo
 
    member x.DtNegociacao = 
       match x with
       | Trade t -> t.DtNegociacao
       | Split s -> s.DtNegociacao
-        
+      | Inplit s -> s.DtNegociacao
+
 type Posicao =
     { Ativo: string
       PrecoMedio: decimal

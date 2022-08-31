@@ -17,7 +17,14 @@ let parseLine culture (lineNumber: int, line: string) =
              DtNegociacao = dtNegociacao
              Conta = conta
              Ativo = ativo
-             Quantidade = Int32.Parse(columns.[4], culture)
+             Quantidade = Decimal.Parse(columns.[4], culture)
+          }
+        elif columns.[3].Equals("INPLIT", StringComparison.InvariantCultureIgnoreCase) then
+          Inplit {
+             DtNegociacao = dtNegociacao
+             Conta = conta
+             Ativo = ativo
+             Quantidade = Decimal.Parse(columns.[4], culture)
           }
         else
           Trade {
