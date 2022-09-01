@@ -182,7 +182,7 @@ let private getVendas (vendas: seq<OperacaoVenda>) =
     let getRow p =
         $"
         <tr>
-            <td>{p.Data:g}</td>
+            <td>{p.Data:``yyyy-MM-dd``}</td>
             <td>{p.Ativo}</td>
             <td>{p.PrecoMedio:C}</td>
             <td>{p.Preco:C}</td>
