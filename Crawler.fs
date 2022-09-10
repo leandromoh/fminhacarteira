@@ -3,23 +3,23 @@ module MinhaCarteira.Crawler
 open System
 open System.Threading.Tasks
 open PuppeteerSharp
+open Models
 
-let private getBrowser() = async {
-    let! _ = BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultChromiumRevision) |> Async.AwaitTask  
+let private getBrowser() = task {
+    let! _ = BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultChromiumRevision)
     let options = LaunchOptions(Headless=false)  
-    return! Puppeteer.LaunchAsync(options) |> Async.AwaitTask  
+    return! Puppeteer.LaunchAsync(options)
 }
 
-let private find url waitUntil script = async {  
+let private find url waitUntil script = task {  
     use! browser = getBrowser()
-    use! page = browser.NewPageAsync() |> Async.AwaitTask  
-    let! _ = page.GoToAsync(url) |> Async.AwaitTask
-    let! _ = page.WaitForFunctionAsync(waitUntil) |> Async.AwaitTask
+    use! page = browser.NewPageAsync()  
+    let! _ = page.GoToAsync(url)
+    let! _ = page.WaitForFunctionAsync(waitUntil)
     let! tickers = page
                     .EvaluateFunctionAsync<string[]>(script) 
-                    |> Async.AwaitTask
 
-    return tickers |> Array.map (fun x -> x.Trim())
+    return tickers |> Array.map (fun x -> x.Trim()) |> Seq.ofArray
 }  
 
 let private getFIIs1() = 
@@ -34,28 +34,36 @@ let private getFIIs2() =
     let script = "() => [...document.querySelectorAll('tr.tabela_principal td:first-child a')].map(x => x.innerHTML)"
     find url waitUntil script
 
-let getFIIs() = async {
-    let! tickers = [ getFIIs1(); getFIIs2(); ] |> Async.Sequential
-    return tickers |> Array.collect id |> Array.distinct
+let private getFIIs() = task {
+    let! tickers = [ getFIIs1; getFIIs2; ] |> Task.Sequential
+    return tickers |> Seq.collect id |> Set.ofSeq |> Set.toSeq
 }
 
-let getFiagro() = 
+let private getFiagro() = 
     let url = "https://www.clubefii.com.br/fundos-imobiliarios/51639/Agronegocio"
     let waitUntil = "() => $('tr.tabela_principal td:first-child a').length > 10"
     let script = "() => [...document.querySelectorAll('tr.tabela_principal td:first-child a')].map(x => x.innerHTML)"
     find url waitUntil script
 
-let getUnits() = 
+let private getUnits() = 
     let url = "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/consultas/mercado-a-vista/units/"
     let waitUntil = "() => true"
     let script = "() => [...document.querySelectorAll('#conteudo-principal table tbody td:nth-child(2)')].map(x => x.innerHTML)"
     find url waitUntil script
 
-let getETFs() = 
+let private getETFs() = 
     let url = "https://br.investing.com/etfs/brazil-etfs"
-    let waitUntil = "() => $('#etfs td[title]').length > 40"
+    let waitUntil = "() => $('#etfs td[title]').length > 20"
     let script = "() => [...document.querySelectorAll('#etfs td[title]')].map(x => x.title)"
     find url waitUntil script
+
+let tickerFactories = 
+    [
+        Fiagro, getFiagro
+        FII, getFIIs
+        ETF, getETFs
+        Acao, getUnits
+    ]
 
 let getCotacao ativos = 
     let getFromGoogle (page: Page) ativo = task {
@@ -69,7 +77,7 @@ let getCotacao ativos =
         return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
     }
     let searchIn = [ getFromGoogle; getFromBing; ]
-    async {  
+    task {  
     use! browser = getBrowser()
     let! moneys = 
         ativos
@@ -90,7 +98,6 @@ let getCotacao ativos =
                 return quote
             }) 
         |> Task.WhenAll 
-        |> Async.AwaitTask
 
     return moneys
         |> Seq.map ((fun s -> s.Replace(",", ".")) >> Decimal.TryParse >> 

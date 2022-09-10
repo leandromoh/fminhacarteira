@@ -7,33 +7,33 @@ open System.Linq
 let parseLine culture (lineNumber: int, line: string) =
     let columns = line.Replace(';', '\t').Split('\t') |> Array.map (fun x -> x.Trim())
     try 
-      let dtNegociacao = DateTime.Parse(columns.[0], culture)
-      let conta = Int32.Parse( columns.[1], culture)
-      let ativo = columns.[2].Replace("\"", String.Empty).Trim().ToUpper()
+      let dtNegociacao = DateTime.Parse(columns[0], culture)
+      let conta = Int32.Parse( columns[1], culture)
+      let ativo = columns[2].Replace("\"", String.Empty).Trim().ToUpper()
 
       let operation = 
-        if columns.[3].Equals("SPLIT", StringComparison.InvariantCultureIgnoreCase) then
+        if columns[3].Equals("SPLIT", StringComparison.InvariantCultureIgnoreCase) then
           Split {
              DtNegociacao = dtNegociacao
              Conta = conta
              Ativo = ativo
-             Quantidade = Decimal.Parse(columns.[4], culture)
+             Quantidade = Decimal.Parse(columns[4], culture)
           }
-        elif columns.[3].Equals("INPLIT", StringComparison.InvariantCultureIgnoreCase) then
+        elif columns[3].Equals("INPLIT", StringComparison.InvariantCultureIgnoreCase) then
           Inplit {
              DtNegociacao = dtNegociacao
              Conta = conta
              Ativo = ativo
-             Quantidade = Decimal.Parse(columns.[4], culture)
+             Quantidade = Decimal.Parse(columns[4], culture)
           }
         else
           Trade {
              DtNegociacao = dtNegociacao
              Conta = conta
              Ativo = ativo
-             Preco = Decimal.Parse(columns.[3], culture)
-             QuantidadeCompra = Int32.Parse(columns.[4], culture)
-             QuantidadeVenda = Int32.Parse(columns.[5], culture) 
+             Preco = Decimal.Parse(columns[3], culture)
+             QuantidadeCompra = Int32.Parse(columns[4], culture)
+             QuantidadeVenda = Int32.Parse(columns[5], culture) 
           }
       Ok operation
     with ex -> 
@@ -44,7 +44,7 @@ let parseLine culture (lineNumber: int, line: string) =
         match op with
         | Trade t when t.QuantidadeCompra > 0 && t.QuantidadeVenda > 0 ->
                 Some "não pode comprar e vender na mesma operação"
-        | Split s when s.Quantidade < 2 -> 
+        | Split s when s.Quantidade < 2m -> 
                 Some "fator de proporção do split nao pode ser menor que 2"
         | _ -> None
         |> function
