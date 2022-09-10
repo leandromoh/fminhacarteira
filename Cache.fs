@@ -1,24 +1,27 @@
 module Cache
 
 open System.IO
+open System.Threading.Tasks
 open System.Text.Json
 open System.Reflection
 open MinhaCarteira.Models
 
-let getOrCreate tipoAtivo fallback = async {
+let getOrCreate tipoAtivo fallback = task {
     let dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
     let path = Path.Combine(dir, $"{tipoAtivo}.json")
-    let! ativos = async {
+    let! ativos = task {
         if File.Exists(path) then
             use streamFile = new StreamReader(path)
-            let! content = streamFile.ReadToEndAsync() |> Async.AwaitTask  
+            let! content = streamFile.ReadToEndAsync()
             return JsonSerializer.Deserialize(content)
         else
             let! result = fallback()
+            let result = result |> Array.ofSeq
             let content = JsonSerializer.Serialize(result) 
-            let! _ = File.WriteAllTextAsync(path, content) |> Async.AwaitTask  
+            do! File.WriteAllTextAsync(path, content)
             return result
     }
     return ativos
            |> Array.map(fun x -> { Ticker = x; Tipo = tipoAtivo })
+           |> Array.toSeq
 }

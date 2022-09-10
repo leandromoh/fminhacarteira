@@ -47,19 +47,17 @@ if errors |> Seq.isEmpty |> not then
     Console.Read() |> ignore
     failwith "aborted" 
     
-let getAtivos = async {
+let getAtivos() = task {
     let! tickers = 
-            [ Cache.getOrCreate FII Crawler.getFIIs;
-              Cache.getOrCreate Fiagro Crawler.getFiagro; 
-              Cache.getOrCreate ETF Crawler.getETFs; 
-              Cache.getOrCreate Acao Crawler.getUnits; ]
-            |> Async.Sequential
+        Crawler.tickerFactories
+        |> Seq.map (fun (x, y) -> fun() -> Cache.getOrCreate x y)
+        |> Task.Sequential
 
-    return tickers |> Array.collect id
+    return tickers |> Seq.collect id
 }
 
 let asyncMain _ = task {
-    let! ativos = getAtivos 
+    let! ativos = getAtivos()
 
     let vendas = CalculoPosicao.calculaLucroVendas ops
     let lucroVendaPorTipoAtivo = 

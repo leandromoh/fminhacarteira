@@ -97,7 +97,7 @@ let calculaPercent selector pos =
     (total, map)
 
 let mountCarteira nomeCarteira (posicao: seq<Posicao>) (cotacao: Map<string, decimal option>) lucroVendas : Carteira =
-    let calcPatrimonio x = decimal x.Quantidade * defaultArg (cotacao.[x.Ativo]) x.PrecoMedio
+    let calcPatrimonio x = decimal x.Quantidade * defaultArg (cotacao[x.Ativo]) x.PrecoMedio
     let (totalAplicado, per1) = posicao |> calculaPercent (fun x -> x.FinanceiroCompra)
     let (patrimonio, per2) = posicao |> calculaPercent calcPatrimonio
     let ativos =  

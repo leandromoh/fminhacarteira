@@ -5,8 +5,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Models.fs" />
-    <Compile Include="Crawler.fs" />
     <Compile Include="Extensions.fs" />
+    <Compile Include="Crawler.fs" />
     <Compile Include="Cache.fs" />
     <Compile Include="CalculoPosicao.fs" />
     <Compile Include="ParserOperacao.fs" />
