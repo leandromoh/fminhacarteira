@@ -64,8 +64,8 @@ let getTipoAtivo fallback (ticker: string) =
             RendaFixa
         
         else 
-            fallback 
-            |> Seq.tryFind (fun x -> x.Ticker = ticker)
+            fallback
+            |> Map.tryFind ticker
             |> Option.map (fun x -> x.Tipo)
             |> Option.defaultValue Outro
     )

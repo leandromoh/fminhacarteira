@@ -53,7 +53,10 @@ let getAtivos() = task {
         |> Seq.map (fun (x, y) -> fun() -> Cache.getOrCreate x y)
         |> Task.Sequential
 
-    return tickers |> Seq.collect id
+    return tickers 
+        |> Seq.collect id 
+        |> Seq.map(fun x -> x.Ticker, x) 
+        |> Map.ofSeq
 }
 
 let asyncMain _ = task {
