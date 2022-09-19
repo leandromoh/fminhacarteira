@@ -4,12 +4,28 @@ open System
 open MinhaCarteira.Models
 open System.Linq
 
+let private getTicker =
+  let mapping = [
+    ("CSUD3", [ "CARD3" ])
+  ]
+  let tickerByOld = 
+    mapping
+    |> Seq.collect(fun (current, olds) -> 
+        olds 
+        |> Seq.map(fun old -> old, current))
+    |> dict
+  fun (ticker:string) ->
+    let cleaned = ticker.TrimEnd('F')
+    match tickerByOld.TryGetValue cleaned with
+    | true, x -> if ticker.EndsWith('F') then x + "F" else x
+    | _ -> ticker
+
 let parseLine culture (lineNumber: int, line: string) =
     let columns = line.Replace(';', '\t').Split('\t') |> Array.map (fun x -> x.Trim())
     try 
       let dtNegociacao = DateTime.Parse(columns[0], culture)
       let conta = Int32.Parse( columns[1], culture)
-      let ativo = columns[2].Replace("\"", String.Empty).Trim().ToUpper()
+      let ativo = columns[2].Replace("\"", String.Empty).Trim().ToUpper() |> getTicker
 
       let operation = 
         if columns[3].Equals("SPLIT", StringComparison.InvariantCultureIgnoreCase) then
