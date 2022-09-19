@@ -22,7 +22,7 @@ let operationsFilesPath =
         .GetChildren()
         |> Seq.map (fun x -> x.Value)
 
-let reportDirectoryPath = configuration.["output:reportDirectoryPath"];
+let reportDirectoryPath = configuration["output:reportDirectoryPath"];
 
 let reportFilePath (moment: DateTime) (rentabilidade: string) = 
     let format = "yyyy.MM.dd.HH.mm.ss"
@@ -55,6 +55,7 @@ let getAtivos() = task {
 
     return tickers 
         |> Seq.collect id 
+        |> Seq.distinctBy (fun x -> x.Ticker)
         |> Seq.map(fun x -> x.Ticker, x) 
         |> Map.ofSeq
 }
