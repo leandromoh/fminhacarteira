@@ -108,10 +108,10 @@ let mountCarteira nomeCarteira (posicao: seq<Posicao>) (cotacao: Map<string, dec
                 Aplicado = x.FinanceiroCompra;
                 PrecoMedio = x.PrecoMedio;
                 Quantidade = x.Quantidade;
-                Cotacao = cotacao.[x.Ativo];
+                Cotacao = cotacao[x.Ativo];
                 Patrimonio = calcPatrimonio x;
-                PercentValorAplicado = per1.[x.Ativo];
-                PercentValorPatrimonio = per2.[x.Ativo] 
+                PercentValorAplicado = per1[x.Ativo];
+                PercentValorPatrimonio = per2[x.Ativo] 
             })
         |> List.ofSeq
         |> List.sortBy (fun x -> x.Ativo)
