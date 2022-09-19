@@ -129,6 +129,7 @@ let private getRow (p: CarteiraAtivo) =
         <td>{cotacao}</td>
         <td>{p.Patrimonio:C}</td>
         <td>{regra3Pretty p.Aplicado p.Patrimonio}</td>
+        <td>{p.Patrimonio - p.Aplicado:C}</td>
         <td>{p.PercentValorAplicado}</td>
         <td>{p.PercentValorPatrimonio}</td>
     </tr>
@@ -146,6 +147,7 @@ let private getTable o =
             <th>Cotacao</th>
             <th>Patrimonio</th>
             <th>%% Rentab</th>
+            <th>Lucro</th>
             <th>%% val aplicado</th>
             <th>%% patrimonio</th>
         </tr>
@@ -174,7 +176,7 @@ let private getVendas (vendas: seq<OperacaoVenda>) =
             </tr>
             <tr>
                 <td>{vendas |> Seq.length}</td>
-                <td>{vendas |> Seq.map(fun x -> x.Ativo) |> Seq.distinct |> Seq.length}</td>
+                <td>{vendas |> Seq.distinctBy(fun x -> x.Ativo.TrimEnd('F')) |> Seq.length}</td>
                 <td>{vendas |> Seq.sumBy(fun x-> x.Lucro):C}</td>
             </tr>
         </table>"
@@ -188,6 +190,7 @@ let private getVendas (vendas: seq<OperacaoVenda>) =
             <td>{p.Preco:C}</td>
             <td>{p.Quantidade}</td>
             <td>{p.Lucro:C}</td>
+            <td>{regra3Pretty p.PrecoMedio p.Preco}</td>
         </tr>
         "
 
@@ -201,6 +204,7 @@ let private getVendas (vendas: seq<OperacaoVenda>) =
             <th>Preco</th>
             <th>Qtd</th>
             <th>Lucro</th>
+            <th>%% Rentab</th>
         </tr>
         {String.Join('\n', vendas |> Seq.map getRow)}
     </table>
@@ -229,4 +233,4 @@ let private getHTML carteiras vendas title =
 let saveAsHTML (destinationPath: string) vendas carteiras =
     let pageTitle = Path.GetFileNameWithoutExtension(destinationPath)
     let pageContent = getHTML carteiras vendas pageTitle
-    File.WriteAllTextAsync(destinationPath, pageContent) |> Async.AwaitTask
+    File.WriteAllTextAsync(destinationPath, pageContent)
