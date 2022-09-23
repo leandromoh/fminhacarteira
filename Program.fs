@@ -8,29 +8,44 @@ open System.Threading.Tasks
 
 let culture = CultureInfo("pt-BR");
 
+[<CLIMutable>]
+type Input = {
+    OperationsFilesPath: seq<string>
+}
+
+[<CLIMutable>]
+type Output = {
+    ReportDirectoryPath: string
+}
+
+[<CLIMutable>]
+type Crawler = {
+    timeoutInSeconds: int
+}
+
+[<CLIMutable>]
+type Configuration = {
+    Input: Input
+    Output: Output
+    Crawler: Crawler
+}
+
 let configuration =
-    let config = ConfigurationBuilder()
-    let dir = Directory.GetCurrentDirectory()
-    config
-        .SetBasePath(dir)
-        .AddJsonFile("appsettings.json")
-        .Build()
+    let builder = ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", true, true)
+                    .AddEnvironmentVariables()
+    let configurationRoot = builder.Build()
+    configurationRoot.Get<Configuration>()
 
-let operationsFilesPath = 
-    configuration
-        .GetSection("input:operationsFilesPath")
-        .GetChildren()
-        |> Seq.map (fun x -> x.Value)
-
-let reportDirectoryPath = configuration["output:reportDirectoryPath"];
 
 let reportFilePath (moment: DateTime) (rentabilidade: string) = 
     let format = "yyyy.MM.dd.HH.mm.ss"
     let fileName = $"minhacarteira.{moment.ToString format} {rentabilidade}.html"
-    Path.Combine(reportDirectoryPath, fileName)
+    Path.Combine(configuration.Output.ReportDirectoryPath, fileName)
 
 let ops, errors = 
-    operationsFilesPath
+    configuration.Input.OperationsFilesPath
        |> Seq.collect (fun path -> 
             let dir = Path.GetDirectoryName(path)
             let pattern = Path.GetFileName(path)
