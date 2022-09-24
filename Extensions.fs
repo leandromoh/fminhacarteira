@@ -49,7 +49,8 @@ let getNumeroTicker ativo =
     else None
 
 let getTipoAtivo fallback (ticker: string) =
-    ticker.TrimEnd('F') 
+    let ticker = ticker.TrimEnd('F') 
+    ticker
     |> getNumeroTicker
     |> Option.bind (function
         | n when n >= 3 && n <= 6 -> Some Acao
