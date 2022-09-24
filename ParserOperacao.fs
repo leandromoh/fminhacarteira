@@ -4,10 +4,7 @@ open System
 open MinhaCarteira.Models
 open System.Linq
 
-let private getTicker =
-  let mapping = [
-    ("CSUD3", [ "CARD3" ])
-  ]
+let getTicker mapping =
   let tickerByOld = 
     mapping
     |> Seq.collect(fun (current, olds) -> 
@@ -20,7 +17,7 @@ let private getTicker =
     | true, x -> if ticker.EndsWith('F') then x + "F" else x
     | _ -> ticker
 
-let parseLine culture (lineNumber: int, line: string) =
+let parseLine culture getTicker (lineNumber: int, line: string) =
     let columns = line.Replace(';', '\t').Split('\t') |> Array.map (fun x -> x.Trim())
     try 
       let dtNegociacao = DateTime.Parse(columns[0], culture)
@@ -79,7 +76,7 @@ let split results =
       | Error x -> erros.Add x
     bons :> seq<_>, erros :> seq<_> 
 
-let parseCSV culture lines =
+let parseCSV culture getTicker lines =
     let isValidLine (_, text) =
       let isInvalid = String.IsNullOrWhiteSpace(text) || text.TrimStart().StartsWith("#")
       not isInvalid
@@ -93,5 +90,5 @@ let parseCSV culture lines =
          |> Seq.zip lineNumbers
          |> Seq.skip 1 // header
          |> Seq.where isValidLine
-         |> Seq.map (parseLine culture)
+         |> Seq.map (parseLine culture getTicker)
     ops

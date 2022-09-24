@@ -8,11 +8,18 @@ open System.Threading.Tasks
 
 let culture = CultureInfo("pt-BR");
 
+[<CLIMutable>] 
+type TickerChange = { 
+    CurrentTicker: string
+    OldTickers: seq<string> 
+}
+
 [<CLIMutable>]
 type Configuration = {
     OperationsFilesPath: seq<string>
     ReportDirectoryPath: string
     CrawlerTimeoutInSeconds: int
+    TickerChanges: seq<TickerChange>
 }
 
 let configuration =
@@ -23,6 +30,10 @@ let configuration =
     let configurationRoot = builder.Build()
     configurationRoot.Get<Configuration>()
 
+let getTicker = 
+    configuration.TickerChanges
+    |> Seq.map(fun x -> x.CurrentTicker, x.OldTickers)
+    |> ParserOperacao.getTicker
 
 let reportFilePath (moment: DateTime) (rentabilidade: string) = 
     let format = "yyyy.MM.dd.HH.mm.ss"
@@ -36,7 +47,7 @@ let ops, errors =
             let pattern = Path.GetFileName(path)
             let files = Directory.GetFiles(dir, pattern)
             files)
-       |> Seq.collect (File.ReadAllLines >> ParserOperacao.parseCSV culture)
+       |> Seq.collect (File.ReadAllLines >> ParserOperacao.parseCSV culture getTicker)
        |> ParserOperacao.split
 
 if errors |> Seq.isEmpty |> not then
