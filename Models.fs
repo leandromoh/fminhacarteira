@@ -10,6 +10,7 @@ type OperacaoVenda =
       Ativo: string }
 
     member x.Lucro = decimal x.Quantidade * (x.Preco - x.PrecoMedio) 
+    member x.FinanceiroVenda = decimal x.Quantidade * x.Preco 
 
 type TipoAtivo =
     | Acao

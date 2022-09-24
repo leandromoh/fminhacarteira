@@ -190,6 +190,7 @@ let private getVendas (vendas: seq<OperacaoVenda>) =
             <td>{p.Preco:C}</td>
             <td>{p.Quantidade}</td>
             <td>{p.Lucro:C}</td>
+            <td>{p.FinanceiroVenda:C}</td>
             <td>{regra3Pretty p.PrecoMedio p.Preco}</td>
         </tr>
         "
@@ -204,6 +205,7 @@ let private getVendas (vendas: seq<OperacaoVenda>) =
             <th>Preco</th>
             <th>Qtd</th>
             <th>Lucro</th>
+            <th>Valor Venda</th>
             <th>%% Rentab</th>
         </tr>
         {String.Join('\n', vendas |> Seq.map getRow)}
