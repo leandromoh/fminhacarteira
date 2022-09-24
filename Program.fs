@@ -9,25 +9,10 @@ open System.Threading.Tasks
 let culture = CultureInfo("pt-BR");
 
 [<CLIMutable>]
-type Input = {
-    OperationsFilesPath: seq<string>
-}
-
-[<CLIMutable>]
-type Output = {
-    ReportDirectoryPath: string
-}
-
-[<CLIMutable>]
-type Crawler = {
-    timeoutInSeconds: int
-}
-
-[<CLIMutable>]
 type Configuration = {
-    Input: Input
-    Output: Output
-    Crawler: Crawler
+    OperationsFilesPath: seq<string>
+    ReportDirectoryPath: string
+    CrawlerTimeoutInSeconds: int
 }
 
 let configuration =
@@ -42,10 +27,10 @@ let configuration =
 let reportFilePath (moment: DateTime) (rentabilidade: string) = 
     let format = "yyyy.MM.dd.HH.mm.ss"
     let fileName = $"minhacarteira.{moment.ToString format} {rentabilidade}.html"
-    Path.Combine(configuration.Output.ReportDirectoryPath, fileName)
+    Path.Combine(configuration.ReportDirectoryPath, fileName)
 
 let ops, errors = 
-    configuration.Input.OperationsFilesPath
+    configuration.OperationsFilesPath
        |> Seq.collect (fun path -> 
             let dir = Path.GetDirectoryName(path)
             let pattern = Path.GetFileName(path)
