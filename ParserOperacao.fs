@@ -17,8 +17,10 @@ let getTicker mapping =
     | true, x -> if ticker.EndsWith('F') then x + "F" else x
     | _ -> ticker
 
-let parseLine culture getTicker (lineNumber: int, line: string) =
+let parseLine config (lineNumber: int, line: string) =
     let columns = line.Replace(';', '\t').Split('\t') |> Array.map (fun x -> x.Trim())
+    let culture = config.Culture
+    let getTicker = config.GetTicker 
     try 
       let dtNegociacao = DateTime.Parse(columns[0], culture)
       let conta = Int32.Parse( columns[1], culture)
@@ -76,7 +78,7 @@ let split results =
       | Error x -> erros.Add x
     bons :> seq<_>, erros :> seq<_> 
 
-let parseCSV culture getTicker lines =
+let parseCSV config lines =
     let isValidLine (_, text) =
       let isInvalid = String.IsNullOrWhiteSpace(text) || text.TrimStart().StartsWith("#")
       not isInvalid
@@ -90,5 +92,5 @@ let parseCSV culture getTicker lines =
          |> Seq.zip lineNumbers
          |> Seq.skip 1 // header
          |> Seq.where isValidLine
-         |> Seq.map (parseLine culture getTicker)
+         |> Seq.map (parseLine config)
     ops

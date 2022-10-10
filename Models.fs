@@ -1,6 +1,7 @@
 module MinhaCarteira.Models
 
 open System
+open System.Globalization
 
 type OperacaoVenda = 
     { PrecoMedio: decimal 
@@ -95,3 +96,10 @@ type Posicao =
 type OperationError = 
     | InvalidCSV of lineNumber: int * record: string * Exception
     | InvalidOperation of lineNumber: int * Operacao  * error: string
+
+type ParseConfiguration =
+  {
+    Culture: CultureInfo
+    GetTicker: string -> string
+    GetTipoAtivo: string -> TipoAtivo
+  }

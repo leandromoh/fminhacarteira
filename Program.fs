@@ -40,23 +40,24 @@ let reportFilePath (moment: DateTime) (rentabilidade: string) =
     let fileName = $"minhacarteira.{moment.ToString format} {rentabilidade}.html"
     Path.Combine(configuration.ReportDirectoryPath, fileName)
 
-let ops, errors = 
-    configuration.OperationsFilesPath
-       |> Seq.collect (fun path -> 
+let processOperation config operationsFilesPath = 
+    operationsFilesPath
+       |> Seq.collect (fun (path:string) -> 
             let dir = Path.GetDirectoryName(path)
             let pattern = Path.GetFileName(path)
             let files = Directory.GetFiles(dir, pattern)
             files)
-       |> Seq.collect (File.ReadAllLines >> ParserOperacao.parseCSV culture getTicker)
+       |> Seq.collect (File.ReadAllLines >> ParserOperacao.parseCSV config)
        |> ParserOperacao.split
 
-if errors |> Seq.isEmpty |> not then
-    Console.WriteLine $"Program was aborted because {Seq.length errors} errors were found in CSV. See below:"
-    for error in errors do
-        Console.WriteLine $"\n\n\n {error}"
-    Console.WriteLine "\n\n\n"
-    Console.Read() |> ignore
-    failwith "aborted" 
+let validateErrors errors =
+    if errors |> Seq.isEmpty |> not then
+        Console.WriteLine $"Program was aborted because {Seq.length errors} errors were found in CSV. See below:"
+        for error in errors do
+            Console.WriteLine $"\n\n\n {error}"
+        Console.WriteLine "\n\n\n"
+        Console.Read() |> ignore
+        failwith "aborted" 
     
 let getAtivos() = task {
     let! tickers = 
@@ -73,17 +74,26 @@ let getAtivos() = task {
 
 let asyncMain _ = task {
     let! ativos = getAtivos()
+    
+    let parseConfig = {
+        Culture = culture
+        GetTicker = getTicker
+        GetTipoAtivo = getTipoAtivo ativos 
+    }
+
+    let ops, errors = processOperation parseConfig configuration.OperationsFilesPath 
+    validateErrors errors
 
     let vendas = CalculoPosicao.calculaLucroVendas ops
     let lucroVendaPorTipoAtivo = 
         vendas 
-        |> Seq.groupBy (fun op -> getTipoAtivo ativos op.Ativo)
+        |> Seq.groupBy (fun op -> parseConfig.GetTipoAtivo op.Ativo)
         |> Seq.map (fun (tipo, ops) ->  tipo , ops |> Seq.sumBy (fun x -> x.Lucro))
         |> Map.ofSeq
 
     let gruposAtivo = 
         ops 
-        |> Seq.groupBy (fun op -> getTipoAtivo ativos op.Ativo)
+        |> Seq.groupBy (fun op -> parseConfig.GetTipoAtivo op.Ativo)
         |> Seq.sortBy fst
 
     let! carteirasAll = 
