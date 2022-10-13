@@ -28,4 +28,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <PropertyGroup>
+      <WarningsAsErrors>FS0025</WarningsAsErrors>
+      <NoWarn>FS3391</NoWarn>
+      <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
 </Project>
