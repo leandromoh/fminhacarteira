@@ -5,6 +5,7 @@ open Microsoft.Extensions.Configuration
 open MinhaCarteira
 open MinhaCarteira.Models
 open System.Threading.Tasks
+open System.Text.Json
 
 let culture = CultureInfo("pt-BR");
 
@@ -72,6 +73,16 @@ let getAtivos() = task {
         |> Map.ofSeq
 }
 
+type Foo = 
+    { 
+        mes: string
+        totalVenda: decimal 
+        totalLucro: decimal 
+        prejuizoAteMesAnterior: decimal 
+        prejuizoCompensar: decimal 
+        impostoDevido: decimal
+    }
+
 let asyncMain _ = task {
     let! ativos = getAtivos()
     
@@ -90,6 +101,72 @@ let asyncMain _ = task {
         |> Seq.groupBy (fun op -> parseConfig.GetTipoAtivo op.Ativo)
         |> Seq.map (fun (tipo, ops) ->  tipo , ops |> Seq.sumBy (fun x -> x.Lucro))
         |> Map.ofSeq
+
+    let getIR (op: OperacaoVenda) = 
+        let x = parseConfig.GetTipoAtivo op.Ativo
+        if x = FII || x = Fiagro then
+            0.20M
+        else
+            0.15M
+
+    let ads = 
+        vendas
+        |> Seq.groupBy getIR
+        |> Seq.map(fun (valorIR, pos) -> 
+            let result = 
+                pos
+                |> Seq.groupBy(fun x -> x.Data.ToString("yyyy-MM"))
+                |> Seq.sortBy fst
+                |> Seq.scan (fun acc (mes, vendas)  ->
+                    let totais = 
+                        vendas
+                        |> Seq.groupBy (fun op -> parseConfig.GetTipoAtivo op.Ativo)
+                        |> Seq.map (fun (tipo, ops) -> 
+                            let totalFinanceiroVenda = ops |> Seq.sumBy(fun x -> x.FinanceiroVenda)
+                            let totalLucro = ops |> Seq.sumBy(fun x -> x.Lucro)
+                            {| 
+                                tipoAtivo = tipo; 
+                                totalFinanceiroVenda = totalFinanceiroVenda; 
+                                totalLucro = totalLucro; 
+                            |}
+                        )
+
+                    let impostoMes = totais |> Seq.sumBy(fun x ->
+                        if x.tipoAtivo = Acao && x.totalLucro > 0 && x.totalFinanceiroVenda < 20_000 then
+                            0M
+                        else
+                            x.totalLucro
+                    )
+
+                    let saldo = acc.prejuizoCompensar + impostoMes
+                    let impostoDevido = if saldo > 0 then saldo * valorIR else 0
+                    let negativoAcumulado = if impostoDevido > 0 then 0M else saldo
+                    let totalVenda = totais |> Seq.sumBy(fun x -> x.totalFinanceiroVenda)
+                    let totalLucro = totais |> Seq.sumBy(fun x -> x.totalLucro)
+
+                    {
+                        mes = mes
+                        totalVenda = totalVenda
+                        totalLucro = totalLucro
+                        prejuizoAteMesAnterior = acc.prejuizoCompensar
+                        prejuizoCompensar = negativoAcumulado
+                        impostoDevido = impostoDevido
+                    }
+                ) { 
+                    mes=""; 
+                    totalVenda =0; 
+                    prejuizoAteMesAnterior=0; 
+                    totalLucro=0;
+                    prejuizoCompensar=0; 
+                    impostoDevido = 0 
+                  }
+                |> Seq.skip 1
+
+            {| tipoIR = valorIR; result = result |}
+        )
+        |> (fun x -> x, JsonSerializerOptions(WriteIndented = true))
+        |> (JsonSerializer.Serialize >> printf "%s")
+
 
     let gruposAtivo = 
         ops 
