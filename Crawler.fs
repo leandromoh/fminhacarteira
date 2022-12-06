@@ -6,7 +6,8 @@ open PuppeteerSharp
 open Models
 
 let private getBrowser() = task {
-    let! _ = BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultChromiumRevision)
+    use fetcher = new BrowserFetcher()
+    let! _ = fetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision)
     let options = LaunchOptions(Headless=false)  
     return! Puppeteer.LaunchAsync(options)
 }
@@ -66,12 +67,12 @@ let tickerFactories =
     ]
 
 let getCotacao ativos = 
-    let getFromGoogle (page: Page) ativo = task {
+    let getFromGoogle (page: IPage) ativo = task {
         let! _ = page.GoToAsync($"http://www.google.com/search?q=%s{ativo}")
         let cellSelector = "div[eid] div[data-ved] span[jscontroller] span[jsname]"   
         return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
     }
-    let getFromBing (page: Page) ativo = task {
+    let getFromBing (page: IPage) ativo = task {
         let! _ = page.GoToAsync($"https://www.bing.com/search?q=%s{ativo}")
         let cellSelector = "#Finance_Quote"   
         return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
