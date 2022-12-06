@@ -26,7 +26,7 @@ let private rendaFixa =
     ]
 
 let private matchAnyRegex regexes =
-    fun ticker -> regexes |> List.exists (fun (regex: Regex) -> regex.IsMatch(ticker))
+    fun (ticker:string)-> regexes |> List.exists (fun (regex: Regex) -> regex.IsMatch(ticker))
 
 let private isRendaFixa = 
     rendaFixa 
