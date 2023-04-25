@@ -58,8 +58,15 @@ let private getETFs() =
     let script = "() => [...document.querySelectorAll('#etfs td[title]')].map(x => x.title)"
     find url waitUntil script
 
+let private getFiInfra() = 
+    let url = "https://dividendosfiis.com.br/firf"
+    let waitUntil = "() => [...document.querySelectorAll('#g-mainbar > div:nth-child(3) > div > div > div.blog-header > table:nth-child(9) > tbody > tr > td:nth-child(1)')].length > 8"
+    let script = "() => [...document.querySelectorAll('#g-mainbar > div:nth-child(3) > div > div > div.blog-header > table:nth-child(9) > tbody > tr > td:nth-child(1)')].map(x => x.innerText)"
+    find url waitUntil script
+
 let tickerFactories = 
     [
+        FiInfra, getFiInfra
         Fiagro, getFiagro
         FII, getFIIs
         ETF, getETFs

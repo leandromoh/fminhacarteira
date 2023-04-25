@@ -19,6 +19,7 @@ type TipoAtivo =
     | BDR
     | FII
     | Fiagro
+    | FiInfra
     | RendaFixa
     | Caixa
     | Outro
