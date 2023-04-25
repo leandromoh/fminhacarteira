@@ -109,7 +109,7 @@ let asyncMain _ = task {
         |> Task.Sequential
     
     let carteiras = carteirasAll |> Seq.filter (fun x -> x.TotalPatrimonio <> 0M)
-    let carteiraTudo = CalculoPosicao.mountCarteiraMaster "Tudo" carteiras
+    let carteiraTudo = CalculoPosicao.mountCarteiraMaster "Tudo" carteirasAll
 
     let rentabilidade = let c = carteiraTudo in
                         WriterHTML.regra3Pretty c.TotalAplicado c.TotalPatrimonio

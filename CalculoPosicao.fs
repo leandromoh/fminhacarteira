@@ -122,11 +122,12 @@ let mountCarteira nomeCarteira (posicao: seq<Posicao>) (cotacao: Map<string, dec
       Ativos = ativos }
 
 let mountCarteiraMaster nomeCarteira carteiras : Carteira =
-    let aplicadoMaster = carteiras |> Seq.sumBy(fun x -> x.TotalAplicado)
-    let patrimonioMaster = carteiras |> Seq.sumBy(fun x -> x.TotalPatrimonio)
+    let carteirasAtuais = carteiras |> Seq.filter (fun x -> x.TotalPatrimonio <> 0M)
+    let aplicadoMaster = carteirasAtuais |> Seq.sumBy(fun x -> x.TotalAplicado)
+    let patrimonioMaster = carteirasAtuais |> Seq.sumBy(fun x -> x.TotalPatrimonio)
     let LucroVendaMaster = carteiras |> Seq.sumBy(fun x -> x.LucroVenda)
     let ativos = 
-        carteiras 
+        carteirasAtuais 
         |> Seq.map (fun c -> 
             let qtd = c.Ativos |> Seq.sumBy(fun x -> x.Quantidade)
             {
