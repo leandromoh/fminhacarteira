@@ -14,15 +14,14 @@ type Foo =
         vendas: seq<OperacaoVenda>
     }
 
-let getIR (parseConfig : ParseConfiguration) (op: OperacaoVenda) = 
-    let x = parseConfig.GetTipoAtivo op.Ativo
-    match x with 
+let private getIR getTipoAtivo (op: OperacaoVenda) = 
+    match getTipoAtivo op.Ativo with 
     | FII | Fiagro -> 0.20M
     | FiInfra -> 0M
     | Acao | BDR | ETF -> 0.15M
     | _ -> 99M 
 
-let calculaPosi (parseConfig : ParseConfiguration) (valorIR: decimal, pos : seq<OperacaoVenda>) =
+let private calculaPosi getTipoAtivo (valorIR: decimal, pos : seq<OperacaoVenda>) =
     let result = 
         pos
         |> Seq.groupBy(fun x -> x.Data.ToString("yyyy-MM"))
@@ -30,7 +29,7 @@ let calculaPosi (parseConfig : ParseConfiguration) (valorIR: decimal, pos : seq<
         |> Seq.scan (fun acc (mes, vendas)  ->
             let totais = 
                 vendas
-                |> Seq.groupBy (fun op -> parseConfig.GetTipoAtivo op.Ativo)
+                |> Seq.groupBy (fun op -> getTipoAtivo op.Ativo)
                 |> Seq.map (fun (tipo, ops) -> 
                     let totalFinanceiroVenda = ops |> Seq.sumBy(fun x -> x.FinanceiroVenda)
                     let totalSaldo = ops |> Seq.sumBy(fun x -> x.Lucro)
@@ -76,9 +75,7 @@ let calculaPosi (parseConfig : ParseConfiguration) (valorIR: decimal, pos : seq<
 
     {| tipoIR = valorIR; result = result |}
 
-
-let calculaIR (parseConfig : ParseConfiguration) (vendas : list<OperacaoVenda>) =
+let calculaIR getTipoAtivo (vendas : list<OperacaoVenda>) =
     vendas
-    |> Seq.groupBy (getIR parseConfig)
-    |> Seq.map (calculaPosi parseConfig)
-
+    |> Seq.groupBy (getIR getTipoAtivo)
+    |> Seq.map (calculaPosi getTipoAtivo)

@@ -93,7 +93,7 @@ let asyncMain _ = task {
         |> Map.ofSeq
 
 
-    calculaIR parseConfig vendas
+    calculaIR parseConfig.GetTipoAtivo vendas
     |> (fun x -> x, JsonSerializerOptions(WriteIndented = true))
     |> (JsonSerializer.Serialize >> printf "%s")
 
