@@ -3,6 +3,13 @@ module MinhaCarteira.CalculoIR
 open System
 open MinhaCarteira.Models
 
+type InfoIR = 
+    {
+        prejuizoDoMes: decimal
+        lucroIsento: decimal
+        impostoDevido: decimal
+    }
+
 type Foo = 
     { 
         mes: string
@@ -10,7 +17,7 @@ type Foo =
         totalSaldo: decimal 
         prejuizoAteMesAnterior: decimal 
         prejuizoCompensar: decimal 
-        impostoDevido: decimal
+        IR : InfoIR
         vendas: seq<OperacaoVenda>
     }
 
@@ -40,12 +47,15 @@ let private calculaPosi getTipoAtivo (valorIR: decimal, pos : seq<OperacaoVenda>
                     |}
                 )
 
+            let mutable lucroIsento = 0M
             let impostoMes = totais |> Seq.sumBy(fun x ->
                 if x.tipoAtivo = Acao && x.totalSaldo > 0 && x.totalFinanceiroVenda < 20_000 then
+                    lucroIsento <- x.totalSaldo
                     0M
                 else
                     x.totalSaldo
             )
+            let lucroIsento = lucroIsento
 
             let saldo = acc.prejuizoCompensar + impostoMes
             let impostoDevido = if saldo > 0 then saldo * valorIR else 0
@@ -59,18 +69,26 @@ let private calculaPosi getTipoAtivo (valorIR: decimal, pos : seq<OperacaoVenda>
                 totalSaldo = totalSaldo
                 prejuizoAteMesAnterior = acc.prejuizoCompensar
                 prejuizoCompensar = negativoAcumulado
-                impostoDevido = impostoDevido
+                IR = { 
+                    prejuizoDoMes = Math.Min(impostoMes, 0)
+                    lucroIsento = lucroIsento
+                    impostoDevido = impostoDevido
+                }
                 vendas = vendas
             }
         ) { 
-            mes=""; 
-            totalVenda =0; 
-            prejuizoAteMesAnterior=0; 
-            totalSaldo=0;
-            prejuizoCompensar=0; 
-            impostoDevido = 0;
-            vendas = []
+            mes = ""
+            totalVenda = 0
+            prejuizoAteMesAnterior = 0 
+            totalSaldo = 0
+            prejuizoCompensar = 0 
+            IR = { 
+                prejuizoDoMes = 0
+                lucroIsento = 0
+                impostoDevido = 0
             }
+            vendas = []
+          }
         |> Seq.skip 1
 
     {| tipoIR = valorIR; result = result |}
