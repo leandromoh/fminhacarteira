@@ -5,6 +5,8 @@ open Microsoft.Extensions.Configuration
 open MinhaCarteira
 open MinhaCarteira.Models
 open System.Threading.Tasks
+open System.Text.Json
+open MinhaCarteira.CalculoIR
 
 let culture = CultureInfo("pt-BR");
 
@@ -71,7 +73,6 @@ let getAtivos() = task {
         |> Seq.map(fun x -> x.Ticker, x) 
         |> Map.ofSeq
 }
-
 let asyncMain _ = task {
     let! ativos = getAtivos()
     
@@ -90,6 +91,11 @@ let asyncMain _ = task {
         |> Seq.groupBy (fun op -> parseConfig.GetTipoAtivo op.Ativo)
         |> Seq.map (fun (tipo, ops) ->  tipo , ops |> Seq.sumBy (fun x -> x.Lucro))
         |> Map.ofSeq
+
+
+    calculaIR parseConfig.GetTipoAtivo vendas
+    |> (fun x -> x, JsonSerializerOptions(WriteIndented = true))
+    |> (JsonSerializer.Serialize >> printf "%s")
 
     let gruposAtivo = 
         ops 

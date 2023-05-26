@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Models.fs" />
+    <Compile Include="CalculoIR.fs" />
     <Compile Include="Extensions.fs" />
     <Compile Include="Crawler.fs" />
     <Compile Include="Cache.fs" />
@@ -29,8 +30,8 @@
     </Content>
   </ItemGroup>
   <PropertyGroup>
-      <WarningsAsErrors>FS0025</WarningsAsErrors>
-      <NoWarn>FS3391</NoWarn>
-      <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>FS0025</WarningsAsErrors>
+    <NoWarn>FS3391</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 </Project>
