@@ -7,6 +7,7 @@ open System.Globalization
 open MinhaCarteira.CalculoPosicao
 
 let private culture = CultureInfo.InvariantCulture
+let vendasAnchor = "Vendas"
 
 let regra3Pretty x y =
     let d = (percent x y) - 100m
@@ -157,7 +158,10 @@ let private getTable o =
 
 let private getSummary carteiras =
     let getAnchor name = $"<td> <a href=\"#{name}\"> {name} </a> </td>"
-    let anchors =  Seq.map (fun x -> getAnchor x.Nome) carteiras
+    let anchors =  
+        carteiras 
+        |> Seq.map (fun x -> getAnchor x.Nome)
+        |> (fun xs -> Seq.append  xs [ getAnchor vendasAnchor ])
 
     $"<table id=\"summary\">
         <tr>
@@ -167,7 +171,7 @@ let private getSummary carteiras =
     "
 let private getVendas (vendas: seq<OperacaoVenda>) =
     let getSummaryTable = 
-        $"
+        $"<a name=\"{vendasAnchor}\" />
         <table>
             <tr>
                 <th>Qtd Vendas</th>
