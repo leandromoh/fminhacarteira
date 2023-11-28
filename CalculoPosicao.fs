@@ -46,7 +46,7 @@ let private mapPrecoMedio mapping (operacoes: Operacao seq) =
     |> Seq.groupBy (fun x -> x.Ativo.TrimEnd('F')) 
     |> Seq.map (fun (ativo, ops) -> 
         ops
-        |> Seq.sortBy (fun op -> op.DtNegociacao)
+        |> Seq.sortBy _.DtNegociacao
         |> precoMedio
         |> mapping ativo
     )
@@ -68,9 +68,9 @@ let calculaLucroVendas operacoes =
             Ativo = key.ativo
             PrecoMedio = key.pMedio
             Preco = key.preco
-            Quantidade = ops |> Seq.sumBy (fun x -> x.Quantidade)
+            Quantidade = ops |> Seq.sumBy _.Quantidade
         })
-    |> Seq.sortBy (fun x -> x.Data)
+    |> Seq.sortBy _.Data
     |> Seq.toList
 
 let posicaoAtivos operacoes : Posicao list =

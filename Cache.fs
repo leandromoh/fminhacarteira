@@ -1,7 +1,6 @@
 module Cache
 
 open System.IO
-open System.Threading.Tasks
 open System.Text.Json
 open System.Reflection
 open MinhaCarteira.Models

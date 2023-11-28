@@ -7,7 +7,7 @@ open Models
 
 let private getBrowser() = task {
     use fetcher = new BrowserFetcher()
-    let! _ = fetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision)
+    let! _ = fetcher.DownloadAsync()
     let options = LaunchOptions(Headless=false)  
     return! Puppeteer.LaunchAsync(options)
 }
@@ -20,7 +20,7 @@ let private find url waitUntil script = task {
     let! tickers = page
                     .EvaluateFunctionAsync<string[]>(script) 
 
-    return tickers |> Array.map (fun x -> x.Trim()) |> Seq.ofArray
+    return tickers |> Array.map _.Trim() |> Seq.ofArray
 }  
 
 let private getFIIs1() = 

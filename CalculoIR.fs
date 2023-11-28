@@ -31,15 +31,15 @@ let private getIR getTipoAtivo (op: OperacaoVenda) =
 let private calculaPosi getTipoAtivo (valorIR: decimal, pos : seq<OperacaoVenda>) =
     let result = 
         pos
-        |> Seq.groupBy(fun x -> x.Data.ToString("yyyy-MM"))
+        |> Seq.groupBy _.Data.ToString("yyyy-MM")
         |> Seq.sortBy fst
         |> Seq.scan (fun acc (mes, vendas)  ->
             let totais = 
                 vendas
                 |> Seq.groupBy (fun op -> getTipoAtivo op.Ativo)
                 |> Seq.map (fun (tipo, ops) -> 
-                    let totalFinanceiroVenda = ops |> Seq.sumBy(fun x -> x.FinanceiroVenda)
-                    let totalSaldo = ops |> Seq.sumBy(fun x -> x.Lucro)
+                    let totalFinanceiroVenda = ops |> Seq.sumBy _.FinanceiroVenda
+                    let totalSaldo = ops |> Seq.sumBy _.Lucro
                     {| 
                         tipoAtivo = tipo; 
                         totalFinanceiroVenda = totalFinanceiroVenda; 
@@ -60,8 +60,8 @@ let private calculaPosi getTipoAtivo (valorIR: decimal, pos : seq<OperacaoVenda>
             let saldo = acc.prejuizoCompensar + impostoMes
             let impostoDevido = if saldo > 0 then saldo * valorIR else 0
             let negativoAcumulado = if impostoDevido > 0 then 0M else saldo
-            let totalVenda = totais |> Seq.sumBy(fun x -> x.totalFinanceiroVenda)
-            let totalSaldo = totais |> Seq.sumBy(fun x -> x.totalSaldo)
+            let totalVenda = totais |> Seq.sumBy _.totalFinanceiroVenda
+            let totalSaldo = totais |> Seq.sumBy _.totalSaldo
 
             {
                 mes = mes
