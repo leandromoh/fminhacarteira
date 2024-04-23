@@ -49,8 +49,10 @@ let private calculaPosi getTipoAtivo (valorIR: decimal, pos : seq<OperacaoVenda>
 
             let mutable lucroIsento = 0M
             let impostoMes = totais |> Seq.sumBy(fun x ->
-                if x.tipoAtivo = Acao && x.totalSaldo > 0 && x.totalFinanceiroVenda < 20_000 then
-                    lucroIsento <- x.totalSaldo
+                if x.totalSaldo > 0 && (
+                    (x.tipoAtivo = Acao && x.totalFinanceiroVenda < 20_000) ||
+                    (x.tipoAtivo = FiInfra)) then
+                    lucroIsento <- lucroIsento + x.totalSaldo
                     0M
                 else
                     x.totalSaldo
