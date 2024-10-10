@@ -5,6 +5,7 @@ open System
 open MinhaCarteira.Models
 open System.Globalization
 open MinhaCarteira.CalculoPosicao
+open System.Text.Json
 
 let private culture = CultureInfo.InvariantCulture
 let vendasAnchor = "Vendas"
@@ -212,9 +213,26 @@ let private getVendas (vendas: seq<OperacaoVenda>) =
             <th>Valor Venda</th>
             <th>%% Rentab</th>
         </tr>
-        {String.Join('\n', vendas |> Seq.map getRow)}
+        {String.Join('\n', vendas 
+            |> Seq.sortByDescending (fun x -> x.Data) 
+            |> Seq.map getRow)}
     </table>
     "
+
+let foo (carteiras: seq<Carteira>) aporte =
+    let ativos =
+        carteiras
+        |> Seq.collect (fun x -> x.Ativos)
+        |> Seq.filter (fun x -> x.Cotacao.IsSome)
+        |> Seq.map (fun x -> 
+            let y = NovoPM2 x.Quantidade x.PrecoMedio aporte x.Cotacao.Value
+            {| y with Ativo = x.Ativo |}
+        )
+        |> Seq.sortBy (fun x -> x.pmDiffP)
+        |> (fun x -> x, JsonSerializerOptions(WriteIndented = true))
+        |> JsonSerializer.Serialize
+    $"<pre>{ativos}</pre>"
+
 
 let private getHTML carteiras vendas title =
     $"
@@ -233,6 +251,8 @@ let private getHTML carteiras vendas title =
             <br />
             {getVendas vendas}
         </body>
+        <br/>
+        {foo carteiras 2000}
     </html>
     "
 

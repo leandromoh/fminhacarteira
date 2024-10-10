@@ -2,6 +2,29 @@ module MinhaCarteira.CalculoPosicao
 
 open MinhaCarteira.Models
 open System
+   
+let NovoPM (qtdOld:int) (pmOld:decimal) (qtdNow:int) (pmNow:decimal) =
+    let finOld = decimal qtdOld * pmOld
+    let finNow = decimal qtdNow * pmNow
+    
+    let finNew = finOld + finNow
+    let qtdNew = decimal (qtdOld + qtdNow)
+    
+    let pmNew = Math.Round(finNew / qtdNew, 3)
+    let pmDiff = Math.Round(pmNew - pmOld, 3)
+    let pmDiffP = Math.Round((pmNew / pmOld - 1M) * 100M, 3)
+    {| 
+        pmOld = pmOld
+        finNow = finNow 
+        qtdNow = qtdNow 
+        pmNew = pmNew 
+        finNew = finNew
+        pmDiff = pmDiff 
+        pmDiffP = pmDiffP 
+    |}
+
+let NovoPM2 qtdOld pmOld finNow pmNow =
+    NovoPM qtdOld pmOld ((int)(finNow/pmNow)) pmNow
 
 // https://www.controlacao.com.br/blog/como-e-calculado-o-preco-medio-da-sua-carteira
 let precoMedio operacoes =
