@@ -84,7 +84,17 @@ let getCotacao ativos =
         let cellSelector = "#Finance_Quote"   
         return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
     }
-    let searchIn = [ getFromGoogle; getFromBing; ]
+    let getFromInvestidor category (page: IPage) ativo = task {
+        let! _ = page.GoToAsync($"https://investidor10.com.br/%s{category}/%s{ativo}/")
+        let cellSelector = "#cards-ticker > div._card.cotacao > div._card-body > div > span"   
+        return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
+    }   
+    let searchIn = [ 
+        getFromGoogle; 
+        getFromInvestidor "etfs"; 
+        getFromInvestidor "fiis";
+        getFromBing; 
+    ]
     task {  
     use! browser = getBrowser()
     let! moneys = 
@@ -108,7 +118,11 @@ let getCotacao ativos =
         |> Task.WhenAll 
 
     return moneys
-        |> Seq.map ((fun s -> s.Replace(",", ".")) >> Decimal.TryParse >> 
+        |> Seq.map ((fun s -> 
+            s
+                .Replace("R$", String.Empty)
+                .Replace(",", ".")
+                .Trim()) >> Decimal.TryParse >> 
             function 
             | true, d -> Some d
             | _ -> None)
