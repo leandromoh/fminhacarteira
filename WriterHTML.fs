@@ -220,21 +220,27 @@ let private getVendas (vendas: seq<OperacaoVenda>) =
     "
 
 let foo (carteiras: seq<Carteira>) aporte =
-    let ativos =
-        carteiras
-        |> Seq.collect (fun x -> x.Ativos)
-        |> Seq.filter (fun x -> x.Cotacao.IsSome)
-        |> Seq.map (fun x -> 
-            let y = NovoPM2 x.Quantidade x.PrecoMedio aporte x.Cotacao.Value
-            {| y with Ativo = x.Ativo |}
-        )
-        |> Seq.sortBy (fun x -> x.pmDiffP)
-        |> (fun x -> x, JsonSerializerOptions(WriteIndented = true))
-        |> JsonSerializer.Serialize
-    $"<pre>{ativos}</pre>"
-
+    carteiras
+    |> Seq.collect (fun x -> x.Ativos)
+    |> Seq.filter (fun x -> x.Cotacao.IsSome)
+    |> Seq.map (fun x -> 
+        let y = NovoPM2 x.Quantidade x.PrecoMedio aporte x.Cotacao.Value
+        {| y with Ativo = x.Ativo |}
+    )
 
 let private getHTML carteiras vendas title =
+    let print = 
+        (fun x -> x, JsonSerializerOptions(WriteIndented = true))
+        >> JsonSerializer.Serialize
+        >> fun x -> $"<pre>{x}</pre>" 
+
+    let values = 
+        [2000M; 3000M; 4000M;] 
+        |> Seq.collect (foo carteiras) 
+        |> Seq.filter (fun x -> x.pmDiffP < 0)
+        |> Seq.sortBy (fun x -> x.pmDiffP)
+        |> Seq.take 40
+        |> Seq.toArray
     $"
     <!DOCTYPE html>
     <html>
@@ -252,7 +258,7 @@ let private getHTML carteiras vendas title =
             {getVendas vendas}
         </body>
         <br/>
-        {foo carteiras 2000}
+        {print values}
     </html>
     "
 
