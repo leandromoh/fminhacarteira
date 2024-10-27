@@ -73,7 +73,18 @@ let getAtivos() = task {
         |> Seq.map(fun x -> x.Ticker, x) 
         |> Map.ofSeq
 }
+
+let checkForUniqueCarteira() : bool =
+    Console.WriteLine("visisao carteira unica?")
+    let resp = Console.ReadLine().Trim().ToLower()
+    match resp with 
+    | "sim" | "s" 
+    | "yes" | "y"
+    | "1" -> true
+    | _ -> false
+
 let asyncMain _ = task {
+    let isUniqueCarteira = checkForUniqueCarteira()
     let! ativos = getAtivos()
     
     let parseConfig = {
@@ -121,7 +132,9 @@ let asyncMain _ = task {
                         WriterHTML.regra3Pretty c.TotalAplicado c.TotalPatrimonio
 
     let fileName = reportFilePath DateTime.Now rentabilidade
-    let! _ = carteiras
+    let! _ = (if isUniqueCarteira 
+              then CalculoPosicao.mountCarteiraUnica "tudo" carteirasAll |> Seq.singleton 
+              else carteiras)
                 |> Seq.append [| carteiraTudo |]    
                 |> WriterHTML.saveAsHTML fileName vendas
 

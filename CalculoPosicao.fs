@@ -171,3 +171,28 @@ let mountCarteiraMaster nomeCarteira carteiras : Carteira =
         LucroVenda = LucroVendaMaster
         Ativos = ativos
     }
+
+
+let mountCarteiraUnica nomeCarteira (carteiras: seq<Carteira>) : Carteira =
+    let carteirasAtuais = carteiras |> Seq.filter (fun x -> x.TotalPatrimonio <> 0M)
+    let aplicadoMaster = carteirasAtuais |> Seq.sumBy(fun x -> x.TotalAplicado)
+    let patrimonioMaster = carteirasAtuais |> Seq.sumBy(fun x -> x.TotalPatrimonio)
+    let LucroVendaMaster = carteiras |> Seq.sumBy(fun x -> x.LucroVenda)
+    let ativos = 
+        carteirasAtuais 
+        |> Seq.collect (fun c -> c.Ativos)
+        |> Seq.map (fun c -> 
+            {
+              c with 
+                PercentValorAplicado = percent aplicadoMaster c.Aplicado;
+                PercentValorPatrimonio = percent patrimonioMaster c.Patrimonio;
+            } : CarteiraAtivo)
+        |> Seq.sortByDescending (fun x -> x.PercentValorPatrimonio)
+        |> List.ofSeq
+    {
+        Nome = nomeCarteira;
+        TotalAplicado = aplicadoMaster;
+        TotalPatrimonio = patrimonioMaster;
+        LucroVenda = LucroVendaMaster
+        Ativos = ativos
+    }
