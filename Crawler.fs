@@ -6,10 +6,23 @@ open PuppeteerSharp
 open Models
 open System.Collections.Generic
 
+let private launchArgs = [|
+    "--disable-gpu";
+    "--disable-dev-shm-usage";
+    "--disable-setuid-sandbox";
+    "--no-first-run";
+    "--no-sandbox";
+    "--no-zygote";
+    "--deterministic-fetch";
+    "--disable-features=IsolateOrigins";
+    "--disable-site-isolation-trials";
+ // "--single-process";
+|]
+
 let private getBrowser() = task {
     use fetcher = new BrowserFetcher()
     let! _ = fetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision)
-    let options = LaunchOptions(Headless=false)  
+    let options = LaunchOptions(Headless=false, Args=launchArgs)  
     return! Puppeteer.LaunchAsync(options)
 }
 
@@ -111,34 +124,39 @@ let setHeaders(page: IPage) = task {
 }
 
 let timeout = 60_000
+let waitOptions = 
+    let x = WaitForFunctionOptions()
+    x.Timeout <- timeout
+    x
+
 let getFromGoogle (page: IPage) ativo = task {
     let! _ = page.GoToAsync($"http://www.google.com/search?q=%s{ativo}", timeout = timeout)
     let cellSelector = "div[eid] div[data-ved] span[jscontroller] span[jsname]" 
-    let! _ = page.WaitForFunctionAsync $"() => document.querySelector('{cellSelector}')"
+    let! _ = page.WaitForFunctionAsync ($"() => document.querySelector('{cellSelector}')", waitOptions)
     return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
 }
 let getFromBing (page: IPage) ativo = task {
     let! _ = page.GoToAsync($"https://www.bing.com/search?q=%s{ativo} stock", timeout = timeout)
     let cellSelector = "#Finance_Quote"   
-    let! _ = page.WaitForFunctionAsync $"() => document.querySelector('{cellSelector}')"
+    let! _ = page.WaitForFunctionAsync ($"() => document.querySelector('{cellSelector}')", waitOptions)
     return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
 }
 let getFromInvestidor category (page: IPage) ativo = task {
     let! _ = page.GoToAsync($"https://investidor10.com.br/%s{category}/%s{ativo}/", timeout = timeout)
     let cellSelector = "#cards-ticker > div._card.cotacao > div._card-body > div > span"   
-    let! _ = page.WaitForFunctionAsync $"() => document.querySelector('{cellSelector}')"
+    let! _ = page.WaitForFunctionAsync ($"() => document.querySelector('{cellSelector}')", waitOptions)
     return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
 }
 let getFromStatus category (page: IPage) ativo = task {
     let! _ = page.GoToAsync($"https://statusinvest.com.br/%s{category}/%s{ativo}/", timeout = timeout)
     let cellSelector = "#main-2 div.info.special.w-100.w-md-33.w-lg-20 strong.value"   
-    let! _ = page.WaitForFunctionAsync $"() => document.querySelector('{cellSelector}')"
+    let! _ = page.WaitForFunctionAsync ($"() => document.querySelector('{cellSelector}')", waitOptions)
     return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
 }    
 let getFromBloomberg (page: IPage) ativo = task {
     let! _ = page.GoToAsync($"https://www.bloomberg.com/quote/%s{ativo}:BZ", timeout = timeout)
     let cellSelector = "div.currentPrice_currentPriceContainer__nC8vw > div.sized-price"   
-    let! _ = page.WaitForFunctionAsync $"() => document.querySelector('{cellSelector}')"
+    let! _ = page.WaitForFunctionAsync ($"() => document.querySelector('{cellSelector}')", waitOptions)
     return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
 }   
 
@@ -147,8 +165,10 @@ let getCotacao ativos tipoAtivo =
     let valids = ResizeArray(seq {
         getFromBloomberg
     //  getFromGoogle
-        getFromBing
     })
+
+    if tipoAtivo = Acao then
+      valids.Add(getFromBing)
 
     if tipoAtivo = FII then
       valids.AddRange([

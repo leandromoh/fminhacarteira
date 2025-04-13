@@ -41,6 +41,13 @@ let parseLine config (lineNumber: int, line: string) =
              Ativo = ativo
              Quantidade = Decimal.Parse(columns[4], culture)
           }
+        elif columns[3].Equals("AMORTIZATION", StringComparison.InvariantCultureIgnoreCase) then
+          Amortization {
+             DtNegociacao = dtNegociacao
+             Conta = conta
+             Ativo = ativo
+             Valor = Decimal.Parse(columns[4], culture)
+          }
         else
           Trade {
              DtNegociacao = dtNegociacao

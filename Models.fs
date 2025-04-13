@@ -70,22 +70,31 @@ type OperacaoInplit =
       Ativo: string
       Quantidade: decimal }
 
+type OperacaoAmortization =
+    { DtNegociacao: DateTime
+      Conta: int
+      Ativo: string
+      Valor: decimal }
+
 type Operacao = 
    | Trade of OperacaoTrade
    | Split of OperacaoSplit
    | Inplit of OperacaoInplit
+   | Amortization of OperacaoAmortization
 
    member x.Ativo = 
       match x with
       | Trade t -> t.Ativo
       | Split s -> s.Ativo
       | Inplit s -> s.Ativo
+      | Amortization s -> s.Ativo
 
    member x.DtNegociacao = 
       match x with
       | Trade t -> t.DtNegociacao
       | Split s -> s.DtNegociacao
       | Inplit s -> s.DtNegociacao
+      | Amortization s -> s.DtNegociacao
 
 type Posicao =
     { Ativo: string

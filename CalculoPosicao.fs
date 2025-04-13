@@ -23,11 +23,9 @@ let NovoPM (qtdOld:int) (pmOld:decimal) (qtdNow:int) (pmNow:decimal) =
         pmDiffP = pmDiffP 
     |}
 
-let NovoPM2 qtdOld pmOld finNow pmNow =
-    NovoPM qtdOld pmOld ((int)(finNow/pmNow)) pmNow
-
 // https://www.controlacao.com.br/blog/como-e-calculado-o-preco-medio-da-sua-carteira
-let precoMedio operacoes =
+let precoMedio (operacoes: seq<Operacao>) =
+    let operacoes = operacoes |> Seq.sortBy (fun op -> op.DtNegociacao)
     ({| pMedio = 0m; qtd = 0; vendas = [ ] |}, operacoes) 
     ||> Seq.fold 
         (fun acc (opX : Operacao) ->
@@ -43,6 +41,9 @@ let precoMedio operacoes =
                     pMedio = acc.pMedio * inplit.Quantidade; 
                     qtd = (decimal acc.qtd / inplit.Quantidade) |> int |}
 
+            | Amortization am -> 
+                {| acc with pMedio = acc.pMedio - am.Valor; |}
+
             | Trade op -> 
                 if op.QuantidadeVenda > 0 then
                     {| acc with 
@@ -57,10 +58,11 @@ let precoMedio operacoes =
                                 } ]
                           |}
                 else 
-                    let x = acc.pMedio * decimal acc.qtd
-                    let y = op.Preco * decimal op.QuantidadeCompra
+                    let aplicado = acc.pMedio * decimal acc.qtd
+                    let aporte = op.Preco * decimal op.QuantidadeCompra
+                    let novoAplicado = aplicado + aporte
                     let novaQtd = acc.qtd + op.QuantidadeCompra
-                    let novoMedio = (x + y) / decimal novaQtd
+                    let novoMedio = novoAplicado / decimal novaQtd
                     {| acc with pMedio = novoMedio; qtd = novaQtd |}
         ) 
 
@@ -69,7 +71,6 @@ let private mapPrecoMedio mapping (operacoes: Operacao seq) =
     |> Seq.groupBy (fun x -> x.Ativo.TrimEnd('F')) 
     |> Seq.map (fun (ativo, ops) -> 
         ops
-        |> Seq.sortBy (fun op -> op.DtNegociacao)
         |> precoMedio
         |> mapping ativo
     )
