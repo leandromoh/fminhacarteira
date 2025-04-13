@@ -5,10 +5,9 @@ open System
 open MinhaCarteira.Models
 open System.Globalization
 open MinhaCarteira.CalculoPosicao
-open System.Text.Json
 
 let private culture = CultureInfo.InvariantCulture
-let vendasAnchor = "Vendas"
+let private vendasAnchor = "Vendas"
 
 let regra3Pretty x y =
     let d = (percent x y) - 100m
@@ -74,7 +73,13 @@ let private getChart o =
                         '#0074D9', '#FF4136', '#2ECC40', '#FF851B', 
                         '#7FDBFF', '#B10DC9', '#FFDC00', '#001f3f', 
                         '#39CCCC', '#01FF70', '#85144b', '#F012BE', 
-                        '#3D9970', '#111111', '#AAAAAA']
+                        '#3D9970', '#111111', '#AAAAAA', '#BDB76B',
+                        '#DAA520', '#BC8F8F', '#D2691E', '#DEB887',
+                        '#98FB98', '#00FA9A', '#00FFFF', '#FF7F50',
+                        '#FFA07A', '#FF69B4', '#7FFFD4', '#FF00FF',
+                        '#8B008B', '#FF0000', '#DCDCDC', '#7FFF00',
+                        '#5EFB6E'
+                    ]
                 }}],
                 labels: [{names}]
             }},
@@ -219,28 +224,7 @@ let private getVendas (vendas: seq<OperacaoVenda>) =
     </table>
     "
 
-let foo (carteiras: seq<Carteira>) aporte =
-    carteiras
-    |> Seq.collect (fun x -> x.Ativos)
-    |> Seq.filter (fun x -> x.Cotacao.IsSome)
-    |> Seq.map (fun x -> 
-        let y = NovoPM2 x.Quantidade x.PrecoMedio aporte x.Cotacao.Value
-        {| y with Ativo = x.Ativo |}
-    )
-
 let private getHTML carteiras vendas title =
-    let print = 
-        (fun x -> x, JsonSerializerOptions(WriteIndented = true))
-        >> JsonSerializer.Serialize
-        >> fun x -> $"<pre>{x}</pre>" 
-
-    let values = 
-        [2000M; 3000M; 4000M;] 
-        |> Seq.collect (foo carteiras) 
-        |> Seq.filter (fun x -> x.pmDiffP < 0)
-        |> Seq.sortBy (fun x -> x.pmDiffP)
-        |> Seq.take 40
-        |> Seq.toArray
     $"
     <!DOCTYPE html>
     <html>
@@ -258,7 +242,6 @@ let private getHTML carteiras vendas title =
             {getVendas vendas}
         </body>
         <br/>
-        {print values}
     </html>
     "
 
