@@ -14,6 +14,16 @@ type System.Threading.Tasks.Task with
             return result.ToArray()
         }
 
+    static member Sequential (tasks: seq<Task<'a>>) : Task<'a[]> = 
+        task {
+            let result = ResizeArray()
+            for t in tasks do
+                let! x = t
+                result.Add x
+
+            return result.ToArray()
+        }
+
 open MinhaCarteira.Models
 open System.Text.RegularExpressions
 
@@ -54,6 +64,7 @@ let getTipoAtivo fallback (ticker: string) =
     |> getNumeroTicker
     |> Option.bind (function
         | n when n >= 3 && n <= 6 -> Some Acao
+        | n when n >= 12 && n <= 15 -> Some Subscricao
         | n when n >= 31 && n <= 35 -> Some BDR
         | _ -> None
     )

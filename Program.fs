@@ -115,25 +115,27 @@ let asyncMain _ = task {
 
     let! carteirasAll = 
         gruposAtivo
+        |> Seq.filter (fun (tipoAtivo, _) -> tipoAtivo <> Subscricao)
         |> Seq.map(fun (key, group) -> fun () -> task {
             let posicao = CalculoPosicao.posicaoAtivos group 
             let tickers = posicao |> Seq.map (fun x -> x.Ativo)
-            let! cotacoes = Crawler.getCotacao tickers
+            let! cotacoes = Crawler.getCotacao tickers key
             let _, venda = lucroVendaPorTipoAtivo.TryGetValue(key)
 
             return CalculoPosicao.mountCarteira (string key) posicao cotacoes venda
         })
         |> Task.Sequential
     
+    let tudo = "Tudo"
     let carteiras = carteirasAll |> Seq.filter (fun x -> x.TotalPatrimonio <> 0M)
-    let carteiraTudo = CalculoPosicao.mountCarteiraMaster "Tudo" carteirasAll
+    let carteiraTudo = CalculoPosicao.mountCarteiraMaster tudo carteirasAll
 
     let rentabilidade = let c = carteiraTudo in
                         WriterHTML.regra3Pretty c.TotalAplicado c.TotalPatrimonio
 
     let fileName = reportFilePath DateTime.Now rentabilidade
     let! _ = (if isUniqueCarteira 
-              then CalculoPosicao.mountCarteiraUnica "tudo" carteirasAll |> Seq.singleton 
+              then CalculoPosicao.mountCarteiraUnica tudo carteirasAll |> Seq.singleton 
               else carteiras)
                 |> Seq.append [| carteiraTudo |]    
                 |> WriterHTML.saveAsHTML fileName vendas

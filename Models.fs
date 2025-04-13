@@ -22,6 +22,7 @@ type TipoAtivo =
     | FiInfra
     | RendaFixa
     | Caixa
+    | Subscricao
     | Outro
 
 type Ativo = { Ticker: string; Tipo: TipoAtivo }
