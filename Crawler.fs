@@ -4,6 +4,7 @@ open System
 open System.Threading.Tasks
 open PuppeteerSharp
 open Models
+open System.Collections.Generic
 
 let private getBrowser() = task {
     use fetcher = new BrowserFetcher()
@@ -12,8 +13,16 @@ let private getBrowser() = task {
     return! Puppeteer.LaunchAsync(options)
 }
 
+let private getCheckedBrowser() = 
+    task {
+        let! browser = getBrowser()
+        return browser
+    }
+
+let browser = Lazy<Task<IBrowser>>(getCheckedBrowser)
+
 let private find url waitUntil script = task {  
-    use! browser = getBrowser()
+    let! browser = browser.Value
     use! page = browser.NewPageAsync()  
     let! _ = page.GoToAsync(url)
     let! _ = page.WaitForFunctionAsync(waitUntil)
@@ -73,49 +82,130 @@ let tickerFactories =
         Acao, getUnits
     ]
 
-let getCotacao ativos = 
-    let getFromGoogle (page: IPage) ativo = task {
-        let! _ = page.GoToAsync($"http://www.google.com/search?q=%s{ativo}")
-        let cellSelector = "div[eid] div[data-ved] span[jscontroller] span[jsname]"   
-        return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
-    }
-    let getFromBing (page: IPage) ativo = task {
-        let! _ = page.GoToAsync($"https://www.bing.com/search?q=%s{ativo}")
-        let cellSelector = "#Finance_Quote"   
-        return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
-    }
-    let getFromInvestidor category (page: IPage) ativo = task {
-        let! _ = page.GoToAsync($"https://investidor10.com.br/%s{category}/%s{ativo}/")
-        let cellSelector = "#cards-ticker > div._card.cotacao > div._card-body > div > span"   
-        return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
-    }   
-    let searchIn = [ 
-        getFromGoogle; 
-        getFromInvestidor "etfs"; 
-        getFromInvestidor "fiis";
-        getFromBing; 
-    ]
+let setHeaders(page: IPage) = task {
+    let values = 
+        [
+            "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3"
+            "Accept-Encoding", "gzip, deflate, br, zstd"
+            "Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
+            "Cache-Control", "no-cache"
+            "Connection", "keep-alive"
+            "DNT", "1"
+            "Cookie", """
+                      """.Trim()
+            "Pragma", "no-cache"
+            "Upgrade-Insecure-Requests", "1"
+            "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+            "sec-ch-ua", """
+                         "Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"
+                         """.Trim()
+            "sec-ch-ua-platform", "Windows"
+            "sec-fetch-dest", "document"
+            "sec-fetch-mode", "navigate"
+            "sec-fetch-site", "same-origin"
+            "sec-fetch-storage-access", "active"
+        ]
+            |> dict 
+            |> Dictionary
+    return! page.SetExtraHttpHeadersAsync values
+}
+
+let timeout = 60_000
+let getFromGoogle (page: IPage) ativo = task {
+    let! _ = page.GoToAsync($"http://www.google.com/search?q=%s{ativo}", timeout = timeout)
+    let cellSelector = "div[eid] div[data-ved] span[jscontroller] span[jsname]" 
+    let! _ = page.WaitForFunctionAsync $"() => document.querySelector('{cellSelector}')"
+    return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
+}
+let getFromBing (page: IPage) ativo = task {
+    let! _ = page.GoToAsync($"https://www.bing.com/search?q=%s{ativo} stock", timeout = timeout)
+    let cellSelector = "#Finance_Quote"   
+    let! _ = page.WaitForFunctionAsync $"() => document.querySelector('{cellSelector}')"
+    return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
+}
+let getFromInvestidor category (page: IPage) ativo = task {
+    let! _ = page.GoToAsync($"https://investidor10.com.br/%s{category}/%s{ativo}/", timeout = timeout)
+    let cellSelector = "#cards-ticker > div._card.cotacao > div._card-body > div > span"   
+    let! _ = page.WaitForFunctionAsync $"() => document.querySelector('{cellSelector}')"
+    return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
+}
+let getFromStatus category (page: IPage) ativo = task {
+    let! _ = page.GoToAsync($"https://statusinvest.com.br/%s{category}/%s{ativo}/", timeout = timeout)
+    let cellSelector = "#main-2 div.info.special.w-100.w-md-33.w-lg-20 strong.value"   
+    let! _ = page.WaitForFunctionAsync $"() => document.querySelector('{cellSelector}')"
+    return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
+}    
+let getFromBloomberg (page: IPage) ativo = task {
+    let! _ = page.GoToAsync($"https://www.bloomberg.com/quote/%s{ativo}:BZ", timeout = timeout)
+    let cellSelector = "div.currentPrice_currentPriceContainer__nC8vw > div.sized-price"   
+    let! _ = page.WaitForFunctionAsync $"() => document.querySelector('{cellSelector}')"
+    return! page.QuerySelectorAsync(cellSelector).EvaluateFunctionAsync<string>("_ => _.innerText")
+}   
+
+let getCotacao ativos tipoAtivo = 
+
+    let valids = ResizeArray(seq {
+        getFromBloomberg
+    //  getFromGoogle
+        getFromBing
+    })
+
+    if tipoAtivo = FII then
+      valids.AddRange([
+        getFromInvestidor "fiis"
+        getFromStatus "fundos-imobiliarios"
+      ])
+
+    if tipoAtivo = Fiagro then
+      valids.AddRange([
+        getFromInvestidor "fiis"
+        getFromStatus "fiagros"
+      ])
+
+    if tipoAtivo = FiInfra then
+      valids.AddRange([
+        getFromInvestidor "fiis"
+        getFromStatus "fiinfras"
+      ])
+
+    elif tipoAtivo = Acao then
+      valids.AddRange([
+        getFromInvestidor "acoes"
+        getFromStatus "acoes"
+      ])
+    
+    elif tipoAtivo = ETF then
+      valids.AddRange([
+        getFromInvestidor "etfs"
+        getFromStatus "etfs"
+      ])
+
     task {  
-    use! browser = getBrowser()
+    let! browser = browser.Value
+
     let! moneys = 
         ativos
         |> Seq.map(fun ativo -> task {  
                 use! page = browser.NewPageAsync()
+                do! setHeaders page
                 let mutable succeed = false
                 let mutable i = 0
                 let mutable quote = "not found"
+                let searchIn = valids |> Seq.sortBy (fun _ -> Guid.NewGuid()) |> Seq.toList
                 while not succeed && i < searchIn.Length do
                     try
                         let f = searchIn[i]
                         let! quote2 = f page ativo
                         quote <- quote2
                         succeed <- true
+                        Console.WriteLine($"{ativo} - {quote}")
                     with 
-                    | _ -> ()
+                    | ex -> Console.WriteLine($"{ativo} - {ex.Message}")
                     i <- i + 1
+                do! Task.Delay(TimeSpan.FromSeconds(15))
                 return quote
             }) 
-        |> Task.WhenAll 
+        |> Task.WhenAll
 
     return moneys
         |> Seq.map ((fun s -> 
